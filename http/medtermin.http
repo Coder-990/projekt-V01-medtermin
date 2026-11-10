@@ -1,0 +1,117 @@
+### MedTermin – primjeri zahtjeva (IntelliJ HTTP Client / VS Code REST Client)
+@host = http://localhost:8080
+# Token iz odgovora na prijavu kopiraj u @token.
+@token = ZALIJEPI_TOKEN
+
+### Provjera rada
+GET {{host}}/api/health
+
+### Prijava (ana)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana12345!"}
+
+### Prijava liječnika (dr.horvat)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "dr.horvat", "password": "Ovlasteni12345!"}
+
+### Podaci prijavljenog korisnika
+GET {{host}}/api/ja
+Authorization: Bearer {{token}}
+
+### Registracija novog korisnika
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{"username": "petra", "password": "Petra12345!", "email": "petra@primjer.hr", "ime": "Petra", "prezime": "Perić"}
+
+### Liječnici sortirani po prezimenu
+GET {{host}}/api/lijecnici?sort=prezime&smjer=asc
+Authorization: Bearer {{token}}
+
+### Termini liječnika
+GET {{host}}/api/termini?lijecnikId=1
+Authorization: Bearer {{token}}
+
+### Nova rezervacija
+POST {{host}}/api/rezervacije
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"terminId": 3, "napomena": "Kontrolni pregled", "oib": "48291736504"}
+
+### Moje rezervacije
+GET {{host}}/api/rezervacije/moje
+Authorization: Bearer {{token}}
+
+### Potvrda rezervacije za ispis (HTML)
+GET {{host}}/ispis/rezervacije/1
+Authorization: Bearer {{token}}
+
+### Otkazivanje rezervacije
+DELETE {{host}}/api/rezervacije/1
+Authorization: Bearer {{token}}
+
+### Moji nalazi
+GET {{host}}/api/nalazi/moji
+Authorization: Bearer {{token}}
+
+### Nalaz u JSON obliku
+GET {{host}}/api/nalazi/1?format=json
+Authorization: Bearer {{token}}
+
+### Nalaz kao PDF
+GET {{host}}/api/nalazi/1?format=pdf
+Authorization: Bearer {{token}}
+
+### Preuzimanje datoteke nalaza
+GET {{host}}/api/nalazi/preuzmi?datoteka=nalaz-ana-krvna-slika.txt
+Authorization: Bearer {{token}}
+
+### Uvoz termina iz XML-a (dr.horvat ili admin)
+POST {{host}}/api/termini/uvoz
+Authorization: Bearer {{token}}
+Content-Type: application/xml
+
+<termini>
+  <termin>
+    <lijecnikId>1</lijecnikId>
+    <pocetak>2026-12-01T09:00</pocetak>
+    <kapacitet>1</kapacitet>
+    <napomena>Jutarnji termin</napomena>
+  </termin>
+</termini>
+
+### Postavke obavijesti (YAML)
+POST {{host}}/api/postavke
+Authorization: Bearer {{token}}
+Content-Type: application/yaml
+
+podsjetnik: true
+satiPrije: 24
+kanal: email
+
+### Trenutne postavke obavijesti
+GET {{host}}/api/postavke
+Authorization: Bearer {{token}}
+
+### Zahtjev za promjenu lozinke (poruka se zapisuje u data/posta)
+POST {{host}}/api/auth/reset-zahtjev
+Content-Type: application/json
+
+{"username": "ana"}
+
+### Promjena lozinke tokenom iz poruke
+POST {{host}}/api/auth/reset
+Content-Type: application/json
+
+{"token": "TOKEN_IZ_PORUKE", "novaLozinka": "NovaLozinka123!"}
+
+### Prijava obrascem (postavlja kolačić SESSION i preusmjerava)
+POST {{host}}/prijava
+Content-Type: application/x-www-form-urlencoded
+
+username=ana&password=Ana12345!&returnUrl=/

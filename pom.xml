@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.7</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>hr.span.akademija</groupId>
+    <artifactId>medtermin</artifactId>
+    <version>1.0.0</version>
+    <name>MedTermin</name>
+    <description>Naručivanje pregleda, pregled nalaza i ispis potvrda za privatnu polikliniku</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Samo kriptografski dio Spring Securityja, bez web filtera. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <!-- Čitanje korisničkih postavki u YAML formatu. -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Odabir testova po oznakama: ./mvnw test -Dgroups=funkcionalno
+                         Bez -Dgroups pokreću se svi testovi. -->
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Statička analiza: SpotBugs + Find Security Bugs.
+             Ne pokreće se u zadanom buildu: ./mvnw -Psast compile spotbugs:check (ili spotbugs:gui) -->
+        <profile>
+            <id>sast</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>4.8.6.6</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <plugins>
+                                <plugin>
+                                    <groupId>com.h3xstream.findsecbugs</groupId>
+                                    <artifactId>findsecbugs-plugin</artifactId>
+                                    <version>1.13.0</version>
+                                </plugin>
+                            </plugins>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Popis ovisnosti (SBOM, CycloneDX) za OSV-Scanner ili Trivy.
+             Ne pokreće se u zadanom buildu: ./mvnw -Psca cyclonedx:makeAggregateBom (target/bom.json) -->
+        <profile>
+            <id>sca</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                        <version>2.9.1</version>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
