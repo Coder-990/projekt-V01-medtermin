@@ -31,6 +31,7 @@ public class PostavkeController {
     private final JdbcTemplate jdbc;
 
     public PostavkeController(JdbcTemplate jdbc) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.platforma.PostavkeController(JdbcTemplate) may expose internal representation by storing an externally mutable object into PostavkeController.jdbc
         this.jdbc = jdbc;
     }
 
@@ -47,6 +48,8 @@ public class PostavkeController {
     public Map<String, Object> spremi(@RequestBody byte[] tijelo, PrijavljeniKorisnik korisnik) {
         Object dokument;
         try {
+            // TODO(sec): OSV/Trivy/Dependency-Check CVE-2022-1471: nepouzdan YAML ulazi u new Yaml().load;
+            // predloziti SafeConstructor i podrzanu verziju; provjera Map nakon load ne sprjecava nuspojave.
             dokument = new Yaml().load(new ByteArrayInputStream(tijelo));
         } catch (YAMLException e) {
             throw ApiException.neispravno("Neispravan YAML.");

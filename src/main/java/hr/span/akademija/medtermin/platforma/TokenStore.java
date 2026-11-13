@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class TokenStore {
 
     private final SecureRandom random = new SecureRandom();
+    // TODO(sec): M09 [rucni pregled]: Tokeni nemaju rok ni opoziv; predloziti TTL, ogranicenje pohrane i opoziv pri odjavi/promjeni lozinke. SecureRandom generiranje je dobro. Izvor/detalji: alati/poslije/pregled-koda.md.
     private final ConcurrentHashMap<String, PrijavljeniKorisnik> tokeni = new ConcurrentHashMap<>();
 
     public String izdaj(PrijavljeniKorisnik korisnik) {

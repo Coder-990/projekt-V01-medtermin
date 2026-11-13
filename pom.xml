@@ -4,9 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- TODO(sec): ovisnosti: Dependency-Check: 83 nalaza za provjeru; vidi alati/prije/ovisnosti-todo.md. -->
+    <!-- TODO(sec): ovisnosti: OSV: 60 nalaza za provjeru; vidi alati/prije/osv-java.txt. -->
+    <!-- TODO(sec): ovisnosti: Trivy: 60 nalaza za provjeru; vidi alati/prije/trivy-java.txt. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
+        <!-- TODO(sec): dependency-review: prijedlog Boot 4.1.2 (stabilna verzija provjerena 2026-11-13),
+             bez primjene. Uskladiti startere, Jackson i testove prema migracijskim uputama;
+             vidi alati/prije/prijedlog-nadogradnje.md. -->
         <version>3.5.7</version>
         <relativePath/>
     </parent>
@@ -20,10 +26,15 @@
     <properties>
         <java.version>21</java.version>
         <jacoco.version>0.8.13</jacoco.version>
+        <!-- TODO(sec): dependency-review: OSV/Trivy/Dependency-Check CVE-2022-1471;
+             ovaj override zadrzava SnakeYAML 1.33 i nakon promjene Boot parenta.
+             Predloziti uklanjanje overridea i sigurnu obradu YAML-a; zasad ne mijenjati. -->
         <snakeyaml.version>1.33</snakeyaml.version>
     </properties>
 
     <dependencies>
+        <!-- OSV/Trivy/Dependency-Check: Spring MVC, Tomcat, Jackson i logging dolaze tranzitivno;
+             njihove verzije uskladjuje Boot parent, bez zasebnih overridea pojedinacnih JAR-ova. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -42,11 +53,13 @@
             <scope>runtime</scope>
         </dependency>
         <!-- Samo kriptografski dio Spring Securityja, bez web filtera. -->
+        <!-- TODO(sec): dependency-review: Dependency-Check/CVE-2018-1258 provjeriti prema stvarnom modulu/verziji; LozinkaHasher trenutačno ne koristi spring-security-crypto. -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
         <!-- Čitanje korisničkih postavki u YAML formatu. -->
+        <!-- TODO(sec): dependency-review: SnakeYAML/CVE-2022-1471 iz sva tri SCA izvjestaja povezan je s PostavkeController.spremi; vidi override i TODO uz load. -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -55,6 +68,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <!-- TODO(sec): dependency-review: Dependency-Check/CVE-2026-24400; AssertJ 3.27.6 dolazi testnim starterom. Predloziti 3.27.7 ili uskladeni Boot BOM, bez primjene. -->
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -146,6 +160,8 @@
                         <groupId>org.cyclonedx</groupId>
                         <artifactId>cyclonedx-maven-plugin</artifactId>
                         <version>2.9.1</version>
+                        <!-- TODO(sec): dependency-review: SBOM ne ukljucuje testne ovisnosti koje DC skenira;
+                             predloziti includeTestScope=true za usporediv obuhvat, zasad bez promjene konfiguracije. -->
                     </plugin>
                 </plugins>
             </build>

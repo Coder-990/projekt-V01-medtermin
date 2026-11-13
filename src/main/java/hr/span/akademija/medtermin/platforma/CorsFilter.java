@@ -59,6 +59,7 @@ public class CorsFilter extends OncePerRequestFilter {
     }
 
     private boolean dopusten(String origin) {
+        // TODO(sec): M07 [rucni pregled]: Koristiti tocnu konfiguriranu allowlistu origin-a; sada su svi HTTP(S) origini dopusteni uz credentials. Iskoristivost ovisi i o cookie/SameSite pravilima. Izvor/detalji: alati/poslije/pregled-koda.md.
         return origin.startsWith("http://") || origin.startsWith("https://");
     }
 }

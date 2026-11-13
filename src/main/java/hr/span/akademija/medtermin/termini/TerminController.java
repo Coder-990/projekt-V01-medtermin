@@ -44,6 +44,7 @@ public class TerminController {
     private final UvozTermina uvoz;
 
     public TerminController(JdbcTemplate jdbc, UvozTermina uvoz) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.termini.TerminController(JdbcTemplate, UvozTermina) may expose internal representation by storing an externally mutable object into TerminController.jdbc
         this.jdbc = jdbc;
         this.uvoz = uvoz;
     }

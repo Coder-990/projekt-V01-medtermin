@@ -36,6 +36,7 @@ public class PostaService {
     public void posaljiUputeZaLozinku(KorisnikService.Korisnik korisnik, String token) {
         String port = okruzenje.getProperty("local.server.port", okruzenje.getProperty("server.port", "8080"));
         String poveznica = "http://localhost:" + port + "/reset?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PostaService.posaljiUputeZaLozinku(KorisnikService$Korisnik, String)
         String poruka = """
                 Za: %s
                 Predmet: %s – promjena lozinke

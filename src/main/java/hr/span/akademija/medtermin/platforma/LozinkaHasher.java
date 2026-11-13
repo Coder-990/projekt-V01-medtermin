@@ -12,6 +12,7 @@ public class LozinkaHasher {
 
     public String hash(String lozinka) {
         try {
+            // TODO(sec): M05 [rucni pregled]: Brzi SHA-256 bez soli nije prikladan za lozinke; predlozeni Argon2id/BCrypt/PBKDF2 uz sol i migraciju postojecih hasheva. Izvor/detalji: alati/poslije/pregled-koda.md.
             MessageDigest sha = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(sha.digest(lozinka.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {

@@ -53,6 +53,7 @@ public class NalazController {
     private final Pohrana pohrana;
 
     public NalazController(JdbcTemplate jdbc, Pohrana pohrana) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.nalazi.NalazController(JdbcTemplate, Pohrana) may expose internal representation by storing an externally mutable object into NalazController.jdbc
         this.jdbc = jdbc;
         this.pohrana = pohrana;
     }
@@ -71,6 +72,7 @@ public class NalazController {
         String trazeni = format == null ? "json" : format;
         Format odabrani = Format.JSON;
         String napomena = null;
+        // TODO(sec): M01 [rucni pregled]: Provjeriti vlasnika prije parsiranja formata; nevaljani format preskace autorizaciju i vraca tudi nalaz. Izvor/detalji: alati/poslije/pregled-koda.md.
         try {
             odabrani = Format.valueOf(trazeni.trim().toUpperCase(Locale.ROOT));
             if (!korisnik.isAdmin() && !nalaz.pacijent().equals(korisnik.username())) {
@@ -87,6 +89,7 @@ public class NalazController {
     @GetMapping("/preuzmi")
     public ResponseEntity<byte[]> preuzmi(@RequestParam String datoteka, PrijavljeniKorisnik korisnik)
             throws IOException {
+        // TODO(sec): M02 [rucni pregled]: contains(username) nije provjera vlasnistva; vezati dokument uz vlasnika u bazi i provjeriti kanonsku putanju unutar pohrane (../, apsolutne putanje, symlink). Izvor/detalji: alati/poslije/pregled-koda.md.
         if (!korisnik.isAdmin() && !datoteka.contains(korisnik.username())) {
             throw ApiException.nijePronadeno("Datoteka nije pronađena.");
         }
@@ -96,6 +99,7 @@ public class NalazController {
         }
         byte[] sadrzaj = Files.readAllBytes(putanja);
         ContentDisposition privitak = ContentDisposition.attachment()
+                // TODO(sec): spotbugs NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE [STYLE; provjeriti nalaz]: Possible null pointer dereference in hr.span.akademija.medtermin.nalazi.NalazController.preuzmi(String, PrijavljeniKorisnik) due to return value of called method
                 .filename(putanja.getFileName().toString(), StandardCharsets.UTF_8)
                 .build();
         return ResponseEntity.ok()

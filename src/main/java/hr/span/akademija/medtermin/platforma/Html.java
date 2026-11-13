@@ -18,6 +18,7 @@ public final class Html {
     }
 
     public static String stranica(String naslov, String tijelo) {
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.Html.stranica(String, String)
         return """
                 <!DOCTYPE html>
                 <html lang="hr">

@@ -42,6 +42,7 @@ public class RezervacijaService {
     private final BolnickiSustavKlijent bis;
 
     public RezervacijaService(JdbcTemplate jdbc, BolnickiSustavKlijent bis) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.rezervacije.RezervacijaService(JdbcTemplate, BolnickiSustavKlijent) may expose internal representation by storing an externally mutable object into RezervacijaService.jdbc
         this.jdbc = jdbc;
         this.bis = bis;
     }
@@ -69,6 +70,7 @@ public class RezervacijaService {
         if (postoji == null || postoji == 0) {
             throw ApiException.nijePronadeno("Termin nije pronađen.");
         }
+        // TODO(sec): M12 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Cijeli record otkriva OIB i napomenu; minimalni log bez osobnih podataka i obrada CR/LF znakova. Izvor/detalji: alati/poslije/pregled-koda.md.
         log.info("Nova rezervacija: {} (korisnik {})", zahtjev, korisnik.username());
         int azurirano = jdbc.update(
                 "UPDATE termini SET zauzeto = zauzeto + 1 WHERE id = ? AND zauzeto < kapacitet", terminId);

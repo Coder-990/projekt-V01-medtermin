@@ -31,6 +31,7 @@ public class IspisController {
         Rezervacija r = rezervacije.pronadi(id)
                 .filter(x -> korisnik.isAdmin() || x.pacijent().equals(korisnik.username()))
                 .orElseThrow(() -> ApiException.nijePronadeno("Rezervacija nije pronađena."));
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.rezervacije.IspisController.potvrda(long, PrijavljeniKorisnik)
         String html = """
                 <!DOCTYPE html>
                 <html lang="hr">

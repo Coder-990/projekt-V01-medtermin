@@ -26,6 +26,7 @@ public class KorisnikService {
     private final LozinkaHasher hasher;
 
     public KorisnikService(JdbcTemplate jdbc, LozinkaHasher hasher) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.platforma.KorisnikService(JdbcTemplate, LozinkaHasher) may expose internal representation by storing an externally mutable object into KorisnikService.jdbc
         this.jdbc = jdbc;
         this.hasher = hasher;
     }
@@ -56,6 +57,7 @@ public class KorisnikService {
         if (zahtjev == null || zahtjev.username() == null || zahtjev.password() == null) {
             return Optional.empty();
         }
+        // TODO(sec): M06 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Record zahtjev ispisuje i password u cistom tekstu; ukloniti tajne iz logova i sprijeciti CR/LF injekciju. Izvor/detalji: alati/poslije/pregled-koda.md.
         log.info("Zahtjev za prijavu: {}", zahtjev);
         return pronadi(zahtjev.username())
                 .filter(k -> hasher.provjeri(zahtjev.password(), k.passwordHash()));

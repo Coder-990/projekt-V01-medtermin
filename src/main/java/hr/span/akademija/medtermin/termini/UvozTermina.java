@@ -34,6 +34,7 @@ public class UvozTermina {
         try {
             DocumentBuilder builder = tvornica().newDocumentBuilder();
             builder.setErrorHandler(new DefaultHandler());
+            // TODO(sec): T01 [FindSecBugs XXE_DOCUMENT; provjera]: Tvornica vec zabranjuje DOCTYPE i vanjske entitete; nije potvrdjena XXE ranjivost. Sacuvati zastite i provjeriti regresijskim testom. Izvor/detalji: alati/poslije/pregled-koda.md.
             dokument = builder.parse(new ByteArrayInputStream(xml));
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw ApiException.neispravno("Neispravan XML.");

@@ -42,6 +42,7 @@ public final class PdfDokument {
         tablica.append("xref\n0 ").append(objekti.size() + 1).append('\n');
         tablica.append("0000000000 65535 f \n");
         for (int pomak : pomaci) {
+            // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.nalazi.PdfDokument.izradi(String, List)
             tablica.append(String.format("%010d 00000 n \n", pomak));
         }
         tablica.append("trailer\n<< /Size ").append(objekti.size() + 1).append(" /Root 1 0 R >>\n");

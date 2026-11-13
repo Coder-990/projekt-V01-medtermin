@@ -23,6 +23,7 @@ public class PocetniPodaci implements CommandLineRunner {
     private final Pohrana pohrana;
 
     public PocetniPodaci(JdbcTemplate jdbc, KorisnikService korisnici, Pohrana pohrana) {
+        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.PocetniPodaci(JdbcTemplate, KorisnikService, Pohrana) may expose internal representation by storing an externally mutable object into PocetniPodaci.jdbc
         this.jdbc = jdbc;
         this.korisnici = korisnici;
         this.pohrana = pohrana;

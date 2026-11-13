@@ -31,6 +31,7 @@ public class PrijavaController {
 
     @GetMapping("/")
     public ResponseEntity<String> pocetna() {
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.pocetna()
         String tijelo = """
                 <h1>%s</h1>
                 <p>Naručivanje pregleda, pregled nalaza i ispis potvrda.</p>
@@ -56,6 +57,7 @@ public class PrijavaController {
             return Html.odgovor(obrazacPrijave(returnUrl, "Neispravno korisničko ime ili lozinka."));
         }
         String token = tokeni.izdaj(korisnik.get().prijavljeni());
+        // TODO(sec): M10 [rucni pregled]: Za HTTPS produkciju predloziti Secure cookie; HttpOnly/SameSite vec postoje. Uskladiti s TLS terminacijom i lokalnim HTTP razvojem. Izvor/detalji: alati/poslije/pregled-koda.md.
         ResponseCookie kolacic = ResponseCookie.from(AuthFilter.KOLACIC, token)
                 .httpOnly(true)
                 .sameSite("Lax")
@@ -89,6 +91,7 @@ public class PrijavaController {
     }
 
     private String obrazacPrijave(String returnUrl, String poruka) {
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.obrazacPrijave(String, String)
         String tijelo = """
                 <h1>Prijava</h1>
                 %s
@@ -104,6 +107,7 @@ public class PrijavaController {
     }
 
     private String obrazacNoveLozinke(String token, String poruka) {
+        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.obrazacNoveLozinke(String, String)
         String tijelo = """
                 <h1>Nova lozinka</h1>
                 %s
@@ -121,6 +125,7 @@ public class PrijavaController {
         if (returnUrl == null || returnUrl.isBlank()) {
             return "/";
         }
+        // TODO(sec): M08 [rucni pregled]: Otvoreno preusmjeravanje; prihvatiti samo provjerene lokalne putanje i odbiti apsolutne URL-ove i //host. Izvor/detalji: alati/poslije/pregled-koda.md.
         return returnUrl;
     }
 }
