@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import sys
+# TODO(sec): semgrep python.lang.security.use-defused-xml.use-defused-xml: The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential data and "XML bombs" can cause denial...
 import xml.etree.ElementTree as ET
 
 path = sys.argv[1] if len(sys.argv) > 1 else "target/spotbugsXml.xml"
 max_prio = int(sys.argv[2]) if len(sys.argv) > 2 else 3
 
+# TODO(sec): semgrep python.lang.security.use-defused-xml-parse.use-defused-xml-parse: The native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential data and "XML bombs" can cause denial of service. Do not use this library to parse untrusted input. Instead the Pytho...
 root = ET.parse(path).getroot()
 rows = []
 for b in root.iter("BugInstance"):
