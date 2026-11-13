@@ -1,0 +1,71 @@
+Starting filesystem walk for root: /
+Scanned /src/target/bom.json file and found 45 packages
+End status: 0 dirs visited, 1 inodes visited, 1 Extract calls, 1.003516ms elapsed, 1.003576ms wall time
+
+Total 12 packages affected by 60 known vulnerabilities (10 Critical, 21 High, 21 Medium, 8 Low, 0 Unknown) from 1 ecosystem.
+60 vulnerabilities can be fixed.
+
++-------------------------------------+------+-----------+----------------------------------------------------+---------+---------------+-----------------+
+| OSV URL                             | CVSS | ECOSYSTEM | PACKAGE                                            | VERSION | FIXED VERSION | SOURCE          |
++-------------------------------------+------+-----------+----------------------------------------------------+---------+---------------+-----------------+
+| https://osv.dev/GHSA-jhq6-gfmj-v8fx | 2.9  | Maven     | ch.qos.logback:logback-core                        | 1.5.20  | 1.5.34        | target/bom.json |
+| https://osv.dev/GHSA-p47f-322f-whfh | 1.2  | Maven     | ch.qos.logback:logback-core                        | 1.5.20  | 1.5.33        | target/bom.json |
+| https://osv.dev/GHSA-qqpg-mvqg-649v | 1.8  | Maven     | ch.qos.logback:logback-core                        | 1.5.20  | 1.5.25        | target/bom.json |
+| https://osv.dev/GHSA-72hv-8253-57qq | 6.9  | Maven     | com.fasterxml.jackson.core:jackson-core            | 2.19.2  | 2.21.1        | target/bom.json |
+| https://osv.dev/GHSA-7hhh-6rmp-j9qf | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-core            | 2.19.2  | 2.21.7        | target/bom.json |
+| https://osv.dev/GHSA-p6pp-m3f8-5c89 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-core            | 2.19.2  | 2.21.7        | target/bom.json |
+| https://osv.dev/GHSA-r7wm-3cxj-wff9 | 8.7  | Maven     | com.fasterxml.jackson.core:jackson-core            | 2.19.2  | 2.21.4        | target/bom.json |
+| https://osv.dev/GHSA-3pjw-73gf-8qr5 | 6.5  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.4        | target/bom.json |
+| https://osv.dev/GHSA-5gvw-p9qm-jgwh | 6.5  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.5        | target/bom.json |
+| https://osv.dev/GHSA-5jmj-h7xm-6q6v | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.5        | target/bom.json |
+| https://osv.dev/GHSA-cxp5-3px4-pw24 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.7        | target/bom.json |
+| https://osv.dev/GHSA-gx83-3vf8-gh7j | 5.6  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.6        | target/bom.json |
+| https://osv.dev/GHSA-hgj6-7826-r7m5 | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.4        | target/bom.json |
+| https://osv.dev/GHSA-j3rv-43j4-c7qm | 8.1  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.4        | target/bom.json |
+| https://osv.dev/GHSA-q4xh-88c3-wmh7 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.6        | target/bom.json |
+| https://osv.dev/GHSA-rmj7-2vxq-3g9f | 8.1  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.4        | target/bom.json |
+| https://osv.dev/GHSA-vvgp-rfg2-7rr6 | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.5        | target/bom.json |
+| https://osv.dev/GHSA-wjgm-6hv5-3cvf | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.6        | target/bom.json |
+| https://osv.dev/GHSA-wv8q-qhhj-9h54 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind        | 2.19.2  | 2.21.7        | target/bom.json |
+| https://osv.dev/GHSA-qv9r-c865-cp47 | 6.3  | Maven     | org.apache.logging.log4j:log4j-api                 | 2.24.3  | 2.25.5        | target/bom.json |
+| https://osv.dev/GHSA-563x-q5rq-57qp | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.52       | target/bom.json |
+| https://osv.dev/GHSA-5m62-pw8w-7w9f | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-5mp6-jrq3-r938 | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-5v3h-fjv2-54fg | 6.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.56       | target/bom.json |
+| https://osv.dev/GHSA-9m3c-qcxr-9x87 | 6.9  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.53       | target/bom.json |
+| https://osv.dev/GHSA-9m89-8frq-c98c | 3.7  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-9xv2-5v5q-p794 | 9.8  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.58       | target/bom.json |
+| https://osv.dev/GHSA-fpj8-gq4v-p354 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.50       | target/bom.json |
+| https://osv.dev/GHSA-fv25-8xcx-gqjc | 7.3  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-gcx9-497g-6cp6 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.58       | target/bom.json |
+| https://osv.dev/GHSA-gx5v-xp9w-j4cg | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-h3x4-894j-xpx5 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.58       | target/bom.json |
+| https://osv.dev/GHSA-h6fc-48rj-7qqh | 9.8  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-h792-v28v-ppgr | 7.3  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.56       | target/bom.json |
+| https://osv.dev/GHSA-mgp5-rv84-w37q | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.52       | target/bom.json |
+| https://osv.dev/GHSA-mqg3-r7h5-24x4 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.56       | target/bom.json |
+| https://osv.dev/GHSA-r29c-68gh-xp6x | 9.8  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.55       | target/bom.json |
+| https://osv.dev/GHSA-rv64-5gf8-9qq8 | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.54       | target/bom.json |
+| https://osv.dev/GHSA-x4m4-345f-5h5g | 7.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core          | 10.1.48 | 10.1.54       | target/bom.json |
+| https://osv.dev/GHSA-wwpq-f5c3-7hvx | 7.0  | Maven     | org.springframework.boot:spring-boot               | 3.5.7   | 3.5.14        | target/bom.json |
+| https://osv.dev/GHSA-ggg2-9786-hwc8 | 5.3  | Maven     | org.springframework.boot:spring-boot-autoconfigure | 3.5.7   | 3.5.15        | target/bom.json |
+| https://osv.dev/GHSA-659m-px2c-25wj | 3.7  | Maven     | org.springframework:spring-core                    | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-9f52-rjqv-25qv | 3.7  | Maven     | org.springframework:spring-expression              | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-r5w3-xv2f-j59q | 7.5  | Maven     | org.springframework:spring-expression              | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-wxpp-56q6-5pcg | 5.3  | Maven     | org.springframework:spring-expression              | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-7m2p-62gw-p8qq | 4.2  | Maven     | org.springframework:spring-web                     | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-3chg-m5w7-qfv5 | 7.1  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-4773-3jfm-qmx3 | 5.9  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.17        | target/bom.json |
+| https://osv.dev/GHSA-6hcq-hmm3-jj3c | 2.6  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.17        | target/bom.json |
+| https://osv.dev/GHSA-6p4f-wcwh-5vvm | 5.3  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.18        | target/bom.json |
+| https://osv.dev/GHSA-72pg-x5f8-j25j | 5.9  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-957g-f97v-vppc | 5.9  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-cjpg-rgq5-fr37 | 5.3  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-h3qp-gqrc-q736 | 4.2  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-j9f9-w8pj-32f8 | 9.8  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 7.0.9         | target/bom.json |
+| https://osv.dev/GHSA-mq64-j8f9-9gcj | 5.9  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-pc63-qcmh-9cmg | 9.8  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 7.0.9         | target/bom.json |
+| https://osv.dev/GHSA-wg35-8jpf-2xv3 | 3.1  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.18        | target/bom.json |
+| https://osv.dev/GHSA-x23c-287f-qqv5 | 7.5  | Maven     | org.springframework:spring-webmvc                  | 6.2.12  | 6.2.19        | target/bom.json |
+| https://osv.dev/GHSA-mjmj-j48q-9wg2 | 8.3  | Maven     | org.yaml:snakeyaml                                 | 1.33    | 2.0           | target/bom.json |
++-------------------------------------+------+-----------+----------------------------------------------------+---------+---------------+-----------------+

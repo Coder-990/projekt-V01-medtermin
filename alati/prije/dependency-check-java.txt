@@ -1,0 +1,95 @@
+== RANJIVE OVISNOSTI ==
+HIGH          1 CVE  assertj-core-3.27.6.jar  [pkg:maven/org.assertj/assertj-core@3.27.6]
+HIGH          4 CVE  jackson-databind-2.19.2.jar  [pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.19.2]
+MEDIUM        3 CVE  log4j-api-2.24.3.jar  [pkg:maven/org.apache.logging.log4j/log4j-api@2.24.3]
+CRITICAL      1 CVE  snakeyaml-1.33.jar  [pkg:maven/org.yaml/snakeyaml@1.33]
+CRITICAL     38 CVE  spring-core-6.2.12.jar  []
+HIGH          1 CVE  spring-security-crypto-6.5.6.jar  []
+CRITICAL     35 CVE  tomcat-embed-core-10.1.48.jar  [pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@10.1.48]
+
+== CVE DETALJI ==
+CVE-2026-24400: AssertJ provides Fluent testing assertions for Java and the Java Virtual Machine (JVM). Starting in version 1.4.0 and prior to version 3.27.7, an XML External Entity (XXE) vulnerability exists in `org
+CVE-2026-54512: jackson-databind contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. From 2.10.0 until 2.18.8, 2.21.4, and 3.1.4, jackson-databind's PolymorphicTypeValid
+CVE-2026-54513: jackson-databind contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. From 2.10.0 until 2.18.8, 2.21.4, and 3.1.4, BasicPolymorphicTypeValidator.Builder.a
+CVE-2026-54514: jackson-databind contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. From 2.0.0 until 2.18.8, 2.21.4, and 3.1.4, JDKFromStringDeserializer constructed In
+CVE-2026-54515: jackson-databind contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. From 2.8.0 until 2.18.9, 2.21.5, and 3.1.4, in BeanDeserializerBase.createContextual
+CVE-2026-34479: The Log4j1XmlLayout from the Apache Log4j 1-to-Log4j 2 bridge fails to escape characters forbidden by the XML 1.0 standard, producing malformed XML output. Conforming XML parsers are required to rejec
+CVE-2026-34477: The fix for CVE-2025-68161 https://logging.apache.org/security.html#CVE-2025-68161 was incomplete: it addressed hostname verification only when enabled via the log4j2.sslVerifyHostName https://logging
+CVE-2026-49844: Improper encoding of non-finite floating-point values during MapMessage JSON serialization in Apache Log4j API produces output that is not valid JSON. This issue affects Apache Log4j API versions 2.13
+CVE-2022-1471: SnakeYaml's Constructor() class does not restrict types which can be instantiated during deserialization. Deserializing yaml content provided by an attacker can lead to remote code execution. We recom
+CVE-2026-41855: In an untrusted JMS environment, org.springframework.jms.support.converter.MappingJackson2MessageConverter and org.springframework.jms.support.converter.JacksonJsonMessageConverter allow arbitrary cla
+CVE-2026-47884: Use of XsltView in a Spring MVC application can result in SSRF and RCE attack if the application has an "/**" mapping that results in view rendering, and where the view name is not explicitly specifie
+CVE-2026-47890: Spring MVC and WebFlux applications are vulnerable to stream corruption when using Server-Sent Events (SSE) with view fragments. Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2.19
+CVE-2026-47891: A Spring WebFlux application that relies on the Aalto XML processor to parse XML input does not correctly enforce the maxInMemorySize limit. Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2
+CVE-2026-47892: A WebFlux application using functional endpoints and deployed with DispatcherServlet may be vulnerable to a header predicate bypass in a pre-flight request. Spring Framework 7.0.0 - 7.0.8 Spring Frame
+CVE-2026-59313: Spring MVC applications using the functional web framework are vulnerable to stream corruption when using Server-Sent Events (SSE). Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2.19 Sprin
+CVE-2026-59283: Applications that evaluate Spring Expression Language (SpEL) expressions using SimpleEvaluationContext may be vulnerable to a safety guard bypass when the SpEL expression compiler is active. Spring Fr
+CVE-2026-41838: IDs for WebSocket sessions in the spring-websocket module are not cryptographically unpredictable, which may be possible to exploit in combination with inadequate authorization rules. Affected version
+CVE-2026-41842: Spring MVC and WebFlux applications are vulnerable to Denial of Service (DoS) attacks when resolving static resources. Affected versions: Spring Framework 7.0.0 through 7.0.7; 6.2.0 through 6.2.18; 6.
+CVE-2026-41848: Applications may be vulnerable to a Regular Expression Denial of Service (ReDoS) attack if an attacker is able to provide a pattern which is then directly or indirectly supplied to one of the followin
+CVE-2026-41850: Applications that evaluate user-supplied Spring Expression Language (SpEL) expressions are vulnerable to an Algorithmic Denial of Service (DoS). By providing a specially crafted expression, an attacke
+CVE-2026-41851: Applications which accept user-supplied Spring Expression Language (SpEL) expressions may be vulnerable to a Denial of Service (DoS) attack if the evaluation of a SpEL expression triggers unbounded ca
+CVE-2026-47885: The PartEventHttpMessageReader in Spring WebFlux does not enforce the maxPartSize limit when maxInMemorySize is set to -1. Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2.19 Spring Framewo
+CVE-2026-47886: Applications that evaluate user-supplied Spring Expression Language (SpEL) expressions may be vulnerable to a Denial of Service (DoS) attack when the power operator (^) is used with a BigDecimal or Bi
+CVE-2026-47888: A Spring RSocket application is exposed to a memory leak via a malformed SETUP frame. Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2.19 Spring Framework 6.1.0 - 6.1.28 Spring Framework 6.
+CVE-2026-47889: A WebFlux application running on the Jetty 12 Core reactive adapter serializes response cookies without the sameSite attribute. Spring Framework 7.0.0 - 7.0.8 Spring Framework 6.2.0 - 6.2.19
+CVE-2026-47893: A Spring WebFlux application that supports WebSocket connections may expose indirectly sensitive user information by including request headers in an exception reason. Spring Framework 7.0.0 - 7.0.8 Sp
+CVE-2026-59282: Spring Framework applications that use Spring's data binding infrastructure to apply user-supplied property paths onto a target object may be vulnerable to a Denial of Service (DoS) attack. Spring Fra
+CVE-2026-22740: A WebFlux server application that processes multipart requests creates temp files for parts larger than 10 K. Under some circumstances, temp files may remain not deleted after the request is fully pro
+CVE-2026-41854: Due to incorrect host parsing, applications that rely on UriComponentsBuilder to parse and validate an externally provided URL string may be exposed to a server-side request forgery (SSRF) attack. Aff
+CVE-2026-41844: A Spring MVC or Spring WebFlux application which configures a mapping for "/**" where the view name is not explicitly specified allows an attacker to craft a link resulting in a 302 redirect to an arb
+CVE-2026-41845: Due to incorrect escaping, the use of JavaScriptUtils.javaScriptEscape() may lead to JavaScript code injection in the browser, potentially resulting in a cross-site scripting (XSS) vulnerability. Affe
+CVE-2026-41846: Spring MVC applications which accept user-supplied values in the cssClass, cssErrorClass, or cssStyle attributes of JSP form tags allow arbitrary HTML/JavaScript code injection, potentially resulting 
+CVE-2026-47883: UrlHandlerFilter can be vulnerable to an open redirect when configured with very broadly matching patterns. The issue applies to the filter variants in both Spring MVC and Spring WebFlux. Spring Frame
+CVE-2026-47887: A Spring MVC application that uses UrlFileNameViewController that is mapped with an end-of-path, and does not have a configured prefix is vulnerable to an open redirect. Spring Framework 7.0.0 - 7.0.8
+CVE-2026-59281: Spring MVC and WebFlux applications that obtain a data-binding Errors instance with HTML escaping enabled and then render field errors using the no-argument Errors.getFieldErrors() or Errors.getFieldE
+CVE-2026-22737: Use of Java scripting engine enabled (e.g. JRuby, Jython) template views in Spring MVC and Spring WebFlux applications can result in disclosure of content from files outside the configured locations f
+CVE-2026-41840: Spring WebFlux applications are vulnerable to Denial of Service (DoS) attacks when processing multipart requests. Affected versions: Spring Framework 7.0.0 through 7.0.7, 6.2.0 through 6.2.18, 6.1.0 t
+CVE-2026-41841: Spring MVC and WebFlux applications are vulnerable to Information Disclosure attacks when resolving static resources. Affected versions: Spring Framework 7.0.0 through 7.0.7; 6.2.0 through 6.2.18; 6.1
+CVE-2026-41843: Spring MVC and WebFlux applications are vulnerable to Path Traversal attacks when resolving static resources. Affected versions: Spring Framework 7.0.0 through 7.0.7; 6.2.0 through 6.2.18; 6.1.0 throu
+CVE-2026-22745: Spring MVC and WebFlux applications are vulnerable to Denial of Service attacks when resolving static resources. More precisely, an application can be vulnerable when all the following are true: * the
+CVE-2026-41852: A vulnerability in Spring Expression Language (SpEL) evaluation logic allows for arbitrary zero-argument method invocation, even within restricted or read-only contexts, which may allow an attacker to
+CVE-2026-41853: Spring MVC and WebFlux applications are vulnerable to Multipart request smuggling attacks. Affected versions: Spring Framework 7.0.0 through 7.0.7; 6.2.0 through 6.2.18; 6.1.0 through 6.1.27; 5.3.0 th
+CVE-2026-59280: Applications using Spring Framework's FreeMarker integration may be vulnerable to a path traversal attack when a controller returns a view name derived from untrusted input and FreeMarker is configure
+CVE-2026-41839: A WebFlux application with a compromised subdomain (for example, compromised via cross-site scripting (XSS)) is vulnerable to an escalation attack exchanging a known session ID for that of an authenti
+CVE-2026-59314: Applications that build a Content-Disposition header value from untrusted input may be vulnerable to HTTP response splitting when the input is a malicious file name. Spring Framework 7.0.0 - 7.0.8 Spr
+CVE-2026-22741: Spring MVC and WebFlux applications are vulnerable to cache poisoning when resolving static resources. More precisely, an application can be vulnerable when all the following are true: * the applicati
+CVE-2026-22735: Spring MVC and WebFlux applications are vulnerable to stream corruption when using Server-Sent Events (SSE). This issue affects Spring Foundation: from 7.0.0 through 7.0.5, from 6.2.0 through 6.2.16, 
+CVE-2018-1258: Spring Framework version 5.0.5 when used in combination with any versions of Spring Security contains an authorization bypass when using method security. An unauthorized malicious user can gain unauth
+CVE-2026-41293: Improper Input Validation vulnerability in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0-M1 through 10.1.54, from 9.0.0.M1 through 9.0.117, from 10.0.0-M
+CVE-2026-43512: DEPRECATED: Authentication Bypass Issues vulnerability in digest authentication in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0-M1 through 10.1.54, from
+CVE-2026-65905: Authentication Bypass by Capture-replay vulnerability in Apache Tomcat's DIGEST authenticator. If, before windowSize requests have been made, a client makes a DIGEST authenticated request with a nonce
+CVE-2025-66614: Improper Input Validation vulnerability. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.14, from 10.1.0-M1 through 10.1.49, from 9.0.0-M1 through 9.0.112. The following versions were EO
+CVE-2026-29145: CLIENT_CERT authentication does not fail as expected for some scenarios when soft fail is disabled vulnerability in Apache Tomcat, Apache Tomcat Native. This issue affects Apache Tomcat: from 11.0.0-M
+CVE-2026-43515: Improper Authorization vulnerability when multiple method constraints define an HTTP method for the same extension in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, f
+CVE-2026-53434: Detection of Error Condition Without Action vulnerability in Apache Tomcat when configuring CRLs for a FFM based connector. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.22, from 10.1.
+CVE-2026-55276: Always-Incorrect Control Flow Implementation vulnerability in Apache Tomcat meant that special roles and empty authorisation constraints were not included when the effective web.xml was logged. This i
+CVE-2026-59083: Improper Handling of URL Encoding (Hex Encoding) vulnerability in Apache Tomcat's rewrite valve allowed security constraint bypass for some configurations. This issue affects Apache Tomcat: from 11.0.
+CVE-2026-59084: Insufficient Technical Documentation vulnerability in Apache Tomcat since the requirements to securely configure the EncryptInterceptor were not clearly documented. This issue affects Apache Tomcat: f
+CVE-2026-65182: Improper Access Control, Incorrect Authorization vulnerability in Apache Tomcat leads to security constraint bypass if a constraint for a longer path is specified before a more restrictive constraint 
+CVE-2026-68525: Incorrect Authorization vulnerability in Apache Tomcat's FORM authentication process allows the bypassing of a security constraint that limits user has access to a resource POST but not GET. This issu
+CVE-2026-65183: Time-of-check Time-of-use (TOCTOU) Race Condition vulnerability in Apache Tomcat when creating unix domain sockets allows an unauthorised local user to access the unix domain socket. This issue affect
+CVE-2026-66422: Improper Authorization vulnerability in Apache Tomcat cause by security-role-ref definitions being incorrectly used as role aliases within the Realm in additional to the correct usage with Request.isU
+CVE-2026-68569: Improper Authentication vulnerability in Apache Tomcat meant that in some circumstances (e.g. CLIENT-CERT, SPNEGO) that a user would be authenticated even if the user did not exist in the DataSourceRe
+CVE-2026-24734: Improper Input Validation vulnerability in Apache Tomcat Native, Apache Tomcat. When using an OCSP responder, Tomcat Native (and Tomcat's FFM port of the Tomcat Native code) did not complete verificat
+CVE-2026-24880: Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling') vulnerability in Apache Tomcat via invalid chunk extension. This issue affects Apache Tomcat: from 11.0.0-M1 through 11
+CVE-2026-29146: Padding Oracle vulnerability in Apache Tomcat's EncryptInterceptor with default configuration. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.18, from 10.0.0-M1 through 10.1.52, from 9.
+CVE-2026-34483: Improper Encoding or Escaping of Output vulnerability in the JsonAccessLogValve component of Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.20, from 10.1.0-M1 through 10.
+CVE-2026-34487: Insertion of Sensitive Information into Log File vulnerability in the cloud membership for clustering component of Apache Tomcat exposed the Kubernetes bearer token. This issue affects Apache Tomcat: 
+CVE-2026-41284: Allocation of Resources Without Limits or Throttling vulnerability in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0-M1 through 10.1.54, from 9.0.0.M1 thr
+CVE-2026-43513: Improper Handling of Case Sensitivity vulnerability in LockOutRealm in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0-M1 through 10.1.54, from 9.0.0.M1 th
+CVE-2026-65927: Off-by-one Error vulnerability in Apache Tomcat impacting the [N] flag on the rewrite valves causes rewrite processing to restart at the second rule rather than the first rule. This issue affects Apac
+CVE-2026-68763: Uncontrolled Resource Consumption vulnerability in Apache Tomcat via an allocation leak in the HTTP/2 backlog tracking when a stream is reset This issue affects Apache Tomcat: from 11.0.0-M1 through 1
+CVE-2026-42498: Exposure of HTTP Authentication Header to unexpected hosts during WebSocket authentication vulnerability in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0
+CVE-2026-53404: Always-Incorrect Control Flow Implementation vulnerability in Apache Tomcat's rewrite valve meant that if the first condition in an OR chain matched, subsequent non-OR conditions were skipped. This is
+CVE-2026-73180: Insufficient Session Expiration vulnerability in Apache Tomcat meant that if the session ID for an authenticated HTTP session was changed after a WebSocket connection had been established under that a
+CVE-2026-34500: CLIENT_CERT authentication does not fail as expected for some scenarios when soft fail is disabled and FFM is used in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M14 through 11.0.20, 
+CVE-2026-55955: Improper Authentication vulnerability in Apache Tomcat allowed a replay attack against the EncryptionInterceptor in the cluster component. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0
+CVE-2026-55956: Improper Authorization vulnerability in Apache Tomcat leads to security constraints specified for the default servlet ignoring any method or method omission configured as part of the constraint. This 
+CVE-2026-25854: Occasional URL redirection to untrusted Site ('Open Redirect') vulnerability in Apache Tomcat via the LoadBalancerDrainingValve. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.18, from 
+CVE-2026-50229: Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS) vulnerability in the number guess example for Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0
+CVE-2026-66299: Uncontrolled Resource Consumption vulnerability in Apache Tomcat's WebSocket chat example. This issue affects Apache Tomcat: from 11.0.0-M20 through 11.0.24, from 10.1.24 through 10.1.57, from 9.0.89 
+CVE-2026-24733: Improper Input Validation vulnerability in Apache Tomcat. Tomcat did not limit HTTP/0.9 requests to the GET method. If a security constraint was configured to allow HEAD requests to a URI but deny GET
+CVE-2026-43514: Observable Timing Discrepancy vulnerability when comparing AJP secret in Apache Tomcat. This issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.21, from 10.1.0-M1 through 10.1.54, from 9.0.0.M1 
+
+Izvor: alati/prije/dependency-check-report.html

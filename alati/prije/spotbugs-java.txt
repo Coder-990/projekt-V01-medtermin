@@ -1,0 +1,21 @@
+P2  EI_EXPOSE_REP                    hr/span/akademija/medtermin/platforma/AppProperties.java:10                 May expose internal representation by returning reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/PocetniPodaci.java:26                           May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/lijecnici/LijecnikController.java:26            May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/nalazi/NalazController.java:56                  May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/platforma/AppProperties.java:10                 May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/platforma/KorisnikService.java:29               May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/platforma/PostavkeController.java:34            May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/platforma/ResetLozinkeService.java:22           May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/rezervacije/RezervacijaService.java:45          May expose internal representation by incorporating reference to mutable object
+P2  EI_EXPOSE_REP2                   hr/span/akademija/medtermin/termini/TerminController.java:47                May expose internal representation by incorporating reference to mutable object
+P2  NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE hr/span/akademija/medtermin/nalazi/NalazController.java:99                  Possible null pointer dereference due to return value of called method
+P2  OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE hr/span/akademija/medtermin/platforma/JdbcPomoc.java:19                     Method may fail to clean up stream or resource on checked exception
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/nalazi/PdfDokument.java:45                      Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/platforma/Html.java:37                          Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/platforma/PostaService.java:52                  Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/platforma/PrijavaController.java:101            Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/platforma/PrijavaController.java:115            Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/platforma/PrijavaController.java:41             Format string should use %n rather than \n
+P2  VA_FORMAT_STRING_USES_NEWLINE    hr/span/akademija/medtermin/rezervacije/IspisController.java:57             Format string should use %n rather than \n
+
+Ukupno: 19
