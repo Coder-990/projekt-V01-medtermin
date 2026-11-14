@@ -74,4 +74,30 @@ class PromjenaLozinkeFunkcionalniTest extends ApiTestBaza {
 
         assertThat(reset.status()).isEqualTo(400);
     }
+
+    @Test
+    @DisplayName("Zahtjev za reset s praznim ili null korisničkim imenom vraća 202")
+    void resetZahtjevPraznoIme() {
+        Odgovor odgovorPrazno = postJson("/api/auth/reset-zahtjev", null, Map.of("username", ""));
+        assertThat(odgovorPrazno.status()).isEqualTo(202);
+
+        java.util.Map<String, Object> tijeloNull = new java.util.HashMap<>();
+        tijeloNull.put("username", null);
+        Odgovor odgovorNull = postJson("/api/auth/reset-zahtjev", null, tijeloNull);
+        assertThat(odgovorNull.status()).isEqualTo(202);
+    }
+
+    @Test
+    @DisplayName("Reset lozinke s praznim ili null tokenom vraća 400")
+    void resetPrazanToken() {
+        Odgovor odgovorPrazan = postJson("/api/auth/reset", null,
+                Map.of("token", "   ", "novaLozinka", "Nova12345!"));
+        assertThat(odgovorPrazan.status()).isEqualTo(400);
+
+        java.util.Map<String, Object> tijeloNull = new java.util.HashMap<>();
+        tijeloNull.put("token", null);
+        tijeloNull.put("novaLozinka", "Nova12345!");
+        Odgovor odgovorNull = postJson("/api/auth/reset", null, tijeloNull);
+        assertThat(odgovorNull.status()).isEqualTo(400);
+    }
 }

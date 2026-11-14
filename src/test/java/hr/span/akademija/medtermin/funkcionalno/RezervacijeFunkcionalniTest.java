@@ -139,4 +139,148 @@ class RezervacijeFunkcionalniTest extends ApiTestBaza {
         assertThat(odgovor.zaglavlje("Content-Type")).startsWith("text/html");
         assertThat(odgovor.tijelo()).contains("Potvrda rezervacije").contains("Molim jutarnji termin");
     }
+
+    @Test
+    @DisplayName("Rezervacija bez termina vraća 400")
+    void rezervacijaBezTermina() {
+        String token = prijava("ana", "Ana12345!");
+        java.util.Map<String, Object> tijelo = new java.util.HashMap<>();
+        tijelo.put("terminId", null);
+        tijelo.put("oib", "48291736504");
+        tijelo.put("napomena", "Test");
+
+        Odgovor odgovor = postJson("/api/rezervacije", token, tijelo);
+
+        assertThat(odgovor.status()).isEqualTo(400);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Termin je obavezan.");
+    }
+
+    @Test
+    @DisplayName("Rezervacija bez OIB-a vraća 400")
+    void rezervacijaBezOiba() {
+        String token = prijava("ana", "Ana12345!");
+        java.util.Map<String, Object> tijelo = new java.util.HashMap<>();
+        tijelo.put("terminId", slobodanTermin(token));
+        tijelo.put("oib", null);
+        tijelo.put("napomena", "Test");
+
+        Odgovor odgovor = postJson("/api/rezervacije", token, tijelo);
+
+        assertThat(odgovor.status()).isEqualTo(400);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("OIB mora imati 11 znamenki.");
+    }
+
+    @Test
+    @DisplayName("Predugačka napomena vraća 400")
+    void predugaNapomena() {
+        String token = prijava("ana", "Ana12345!");
+        String dugaNapomena = "a".repeat(1001);
+
+        Odgovor odgovor = postJson("/api/rezervacije", token,
+                Map.of("terminId", slobodanTermin(token), "napomena", dugaNapomena, "oib", "48291736504"));
+
+        assertThat(odgovor.status()).isEqualTo(400);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Napomena smije imati najviše 1000 znakova.");
+    }
+
+    @Test
+    @DisplayName("Rezervacija nepostojećeg termina vraća 404")
+    void rezervacijaNepostojecegTermina() {
+        String token = prijava("ana", "Ana12345!");
+
+        Odgovor odgovor = postJson("/api/rezervacije", token,
+                Map.of("terminId", 99999L, "napomena", "Kontrola", "oib", "48291736504"));
+
+        assertThat(odgovor.status()).isEqualTo(404);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Termin nije pronađen.");
+    }
+
+    @Test
+    @DisplayName("Otkazivanje nepostojeće rezervacije vraća 404")
+    void otkazivanjeNepostojeceRezervacije() {
+        String token = prijava("ana", "Ana12345!");
+
+        Odgovor odgovor = delete("/api/rezervacije/99999", token);
+
+        assertThat(odgovor.status()).isEqualTo(404);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Rezervacija nije pronađena.");
+    }
+
+    @Test
+    @DisplayName("Korisnik ne može otkazati tuđu rezervaciju (404)")
+    void otkazivanjeTudeRezervacije() {
+        String ana = prijava("ana", "Ana12345!");
+        String marko = prijava("marko", "Marko12345!");
+        long id = rezerviraj(ana, slobodanTermin(ana), "Ana termin").json().get("id").asLong();
+
+        Odgovor odgovor = delete("/api/rezervacije/" + id, marko);
+
+        assertThat(odgovor.status()).isEqualTo(404);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Rezervacija nije pronađena.");
+    }
+
+    @Test
+    @DisplayName("Administrator može otkazati tuđu rezervaciju")
+    void adminOtkazujeTuduRezervaciju() {
+        String ana = prijava("ana", "Ana12345!");
+        String admin = prijava("admin", "Admin12345!");
+        long id = rezerviraj(ana, slobodanTermin(ana), "Za otkaz od admina").json().get("id").asLong();
+
+        Odgovor odgovor = delete("/api/rezervacije/" + id, admin);
+
+        assertThat(odgovor.status()).isEqualTo(204);
+    }
+
+    @Test
+    @DisplayName("Ispis nepostojeće rezervacije vraća 404")
+    void ispisNepostojeceRezervacije() {
+        String token = prijava("ana", "Ana12345!");
+
+        Odgovor odgovor = get("/ispis/rezervacije/99999", token);
+
+        assertThat(odgovor.status()).isEqualTo(404);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Rezervacija nije pronađena.");
+    }
+
+    @Test
+    @DisplayName("Korisnik ne može ispisati tuđu rezervaciju (404)")
+    void ispisTudeRezervacije() {
+        String ana = prijava("ana", "Ana12345!");
+        String marko = prijava("marko", "Marko12345!");
+        long id = rezerviraj(ana, slobodanTermin(ana), "Anin pregled").json().get("id").asLong();
+
+        Odgovor odgovor = get("/ispis/rezervacije/" + id, marko);
+
+        assertThat(odgovor.status()).isEqualTo(404);
+        assertThat(odgovor.json().get("greska").asText()).isEqualTo("Rezervacija nije pronađena.");
+    }
+
+    @Test
+    @DisplayName("Administrator može ispisati tuđu rezervaciju")
+    void adminMozeIspisatiTuduRezervaciju() {
+        String ana = prijava("ana", "Ana12345!");
+        String admin = prijava("admin", "Admin12345!");
+        long id = rezerviraj(ana, slobodanTermin(ana), "Za admin ispis").json().get("id").asLong();
+
+        Odgovor odgovor = get("/ispis/rezervacije/" + id, admin);
+
+        assertThat(odgovor.status()).isEqualTo(200);
+        assertThat(odgovor.tijelo()).contains("Za admin ispis");
+    }
+
+    @Test
+    @DisplayName("Ispis rezervacije s null napomenom ispravno generira HTML")
+    void ispisRezervacijeSNullNapomenom() {
+        String token = prijava("ana", "Ana12345!");
+        java.util.Map<String, Object> tijelo = new java.util.HashMap<>();
+        tijelo.put("terminId", slobodanTermin(token));
+        tijelo.put("oib", "48291736504");
+        tijelo.put("napomena", null);
+
+        Odgovor kreiranje = postJson("/api/rezervacije", token, tijelo);
+        long id = kreiranje.json().get("id").asLong();
+
+        Odgovor odgovor = get("/ispis/rezervacije/" + id, token);
+        assertThat(odgovor.status()).isEqualTo(200);
+    }
 }
