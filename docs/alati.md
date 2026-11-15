@@ -2,7 +2,7 @@
 
 ## Stvarni rezultati provjera
 
-Lokalni ZAP izvještaji prije i poslije nalaze se u `alati/prije/zap-lokalno.html` i `alati/poslije/zap-lokalno.html`; pregled nije bio autentificiran, a Firefox integracija nije radila. OSV izvještaj za Jackson 2.22.1 prijavio je 7 nalaza; testne ovisnosti ažurirane su na 2.22.3, a ponovni OSV pregled nije potvrđen jer je automatska provjera odbila slanje popisa ovisnosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, uz jedno dokumentirano izuzeće i isključen OSS Index.
+Lokalni ZAP izvještaji prije i poslije nalaze se u `alati/prije/zap-lokalno.html` i `alati/poslije/zap-lokalno.html`; pregled nije bio autentificiran, a Firefox integracija nije radila. OSV izvještaj za Jackson 2.22.1 prijavio je 7 nalaza; testne ovisnosti ažurirane su na 2.22.3, a ponovni OSV pregled 86 paketa nije prijavio ranjivosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, uz jedno dokumentirano izuzeće i isključen OSS Index.
 
 Za projekt u korijenu koristi `./osv-scan.sh` i `./dependency-check-scan.sh`; oba stvaraju izvještaje samo ako se alat uspješno pokrene. Rezultati i ograničenja: `alati/poslije/README.md`.
 

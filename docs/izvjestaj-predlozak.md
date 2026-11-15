@@ -4,7 +4,7 @@
 
 Izvorna verzija: 117/117 izvornih testova prolazi, JaCoCo 659/659 linija i 225/225 grana. Popravljena verzija: 156/157 testova prolazi, JaCoCo 806/806 linija i 357/357 grana. Jedini izvorni test koji pada traži HTTP 200 s tuđim nalazom, a popravak vraća 404; test nije mijenjan. Deset odabranih sigurnosnih testova pada na izvornom, a prolazi na popravljenom kodu. Dokazi: `alati/poslije/pokrivenost.md` i `alati/poslije/crveno-zeleno.md`.
 
-OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovisnosti podignute su na 2.22.3, koju taj izvještaj navodi kao ispravljenu. Novi OSV pregled nije proveden jer je automatska provjera odbila slanje popisa ovisnosti vanjskom servisu; prethodni izvještaj ostaje povijesni. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, ali ima usko isključen CVE-2018-1258 i nije koristio OSS Index. ZAP je pokrenut lokalno prije i poslije bez prijave; Firefox integracija nije uspjela, a dva upozorenja srednje razine ostaju za procjenu.
+OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovisnosti podignute su na 2.22.3, koju taj izvještaj navodi kao ispravljenu. Naknadni OSV pregled 86 paketa u `alati/poslije/osv-java.txt` nije prijavio ranjivosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, ali ima usko isključen CVE-2018-1258 i nije koristio OSS Index. ZAP je pokrenut lokalno prije i poslije bez prijave; Firefox integracija nije uspjela, a dva upozorenja srednje razine ostaju za procjenu.
 
 
 > **Važno:** Izvorni funkcionalni test nalaza i sigurnosni test izravno su proturječni; izvorni test nije izmijenjen i trenutačno pada. ZAP je pokrenut lokalno bez autentikacije; Firefox integracija javila je grešku. Rezultati i crveno/zeleno su u `alati/poslije`. Izvorni primjeri zahtjeva i odgovora u nastavku opisi su scenarija, osim gdje su potkrijepljeni navedenim testom.
@@ -262,7 +262,7 @@ Tijekom analize izvještaja automatiziranih alata identificiran je niz nalaza ko
 | **SpotBugs** | `IMPROPER_UNICODE` (3 nalaza u `PdfDokument`) | **Nizak rizik / Stil.** Odnosi se na pretvorbu i formatiranje teksta u PDF generatoru. Nema dokazivih sigurnosnih implikacija niti utjecaja na autorizaciju i integritet. |
 | **Semgrep** | `use-defused-xml` (4 nalaza u Python skriptama) | **Nije produkcijski kod.** Odnosi se na pomoćne Python skripte (`../scripts/spotbugs-pregled.py`, `../scripts/oznacavanje-ranjovisti.py`) koje se pokreću isključivo lokalno od strane programera za parsiranje lokalnih XML izvještaja. Skripte nisu izložene na mreži niti su dio web poslužitelja. |
 | **SCA (OSV, Trivy, DC)** | Tomcat `CVE-2026-24880` (Request Smuggling) i povezane CVE oznake | **Uvjetni rizik infrastrukture.** Ranjivost zahtijeva specifičnu kombinaciju reverse proxyja (s različitim tumačenjem chunk ekstenzija) i embedded Tomcata. Aplikacija se lokalno vrti samostalno, a u produkciji se mitigira pravilnim konfiguriranjem ingress proxyja. |
-| **SCA (OSV, DC)** | Jackson Core / Databind ranjivosti deserijalizacije | **Potrebna zasebna procjena.** OSV je prijavio 7 nalaza za testni Jackson 2.22.1; verzija je ažurirana na 2.22.3. Novi OSV pregled nije potvrđen. Nema osnove sve Jackson CVE-ove skupno proglasiti neprimjenjivima. |
+| **SCA (OSV, DC)** | Jackson Core / Databind ranjivosti deserijalizacije | **Potrebna zasebna procjena.** OSV je prijavio 7 nalaza za testni Jackson 2.22.1; verzija je ažurirana na 2.22.3. Ponovni OSV pregled nije prijavio ranjivosti. Nema osnove sve Jackson CVE-ove skupno proglasiti neprimjenjivima. |
 
 ---
 
