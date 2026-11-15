@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")" || exit 1
 
-OUT=alati/prije
+OUT=alati/poslije
 mkdir -p "$OUT"
 
 # Maven razrijesi verzije iz parenta/BOM-a i tranzitivne ovisnosti.

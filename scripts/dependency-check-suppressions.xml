@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+CVE-2018-1258 odnosi se na Spring Framework 5.0.5 i method security.
+Ovaj JAR je spring-security-crypto 7.1.2; projekt koristi Spring Framework 7.0.10
+te crypto modul za BCrypt. Isključenje je ograničeno na točan SHA-1 JAR-a i CVE;
+provjeriti ponovno pri svakoj promjeni ovisnosti.
+        ]]></notes>
+        <sha1>1a803854736530804e7b56c578508a5eb5c34dd7</sha1>
+        <cve>CVE-2018-1258</cve>
+    </suppress>
+</suppressions>

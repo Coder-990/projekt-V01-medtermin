@@ -25,6 +25,12 @@ public class AuthFilter extends OncePerRequestFilter {
     public static final String KOLACIC = "SESSION";
 
     private final TokenStore tokeni;
+    private java.util.List<String> dopusteniOrigini = java.util.List.of();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void postaviPostavke(AppProperties postavke) {
+        dopusteniOrigini = postavke.dopusteniOrigini();
+    }
 
     public AuthFilter(TokenStore tokeni) {
         this.tokeni = tokeni;
@@ -34,17 +40,44 @@ public class AuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String token = izZaglavlja(request);
-        if (token == null) {
+        boolean kolacic = token == null;
+        if (kolacic) {
             token = izKolacica(request);
         }
         PrijavljeniKorisnik korisnik = tokeni.korisnik(token);
+        // CSRF: preglednik automatski šalje SESSION kolačić. Za promjene podataka
+        // zahtijevamo točan same-origin ili konfigurirani frontend Origin; Bearer
+        // zahtjevi ne koriste automatske kolačiće i zadržavaju postojeći API ugovor.
+        if (kolacic && korisnik != null && !sigurnaMetoda(request.getMethod())
+                && !pouzdanOrigin(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
         if (korisnik != null) {
             request.setAttribute(ATRIBUT, korisnik);
         }
         chain.doFilter(request, response);
     }
 
-    private static String izZaglavlja(HttpServletRequest request) {
+    private static boolean sigurnaMetoda(String metoda) {
+        return "GET".equals(metoda) || "HEAD".equals(metoda) || "OPTIONS".equals(metoda);
+    }
+
+    private boolean pouzdanOrigin(HttpServletRequest request) {
+        String origin = request.getHeader(HttpHeaders.ORIGIN);
+        if (origin == null || origin.isBlank()) return false;
+        if (dopusteniOrigini.contains(origin)) return true;
+        String scheme = request.getScheme();
+        int port = request.getServerPort();
+        String host = request.getServerName();
+        if (host.indexOf(':') >= 0 && !host.startsWith("[")) host = "[" + host + "]";
+        boolean zadaniPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
+        String vlastiti = scheme + "://" + host + (zadaniPort ? "" : ":" + port);
+        return vlastiti.equals(origin);
+    }
+
+    // M09: Izdvajanje tokena dostupno je i odjavi, kako bi opozvala isti token kao autentifikacija.
+    static String izZaglavlja(HttpServletRequest request) {
         String zaglavlje = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (zaglavlje != null && zaglavlje.regionMatches(true, 0, "Bearer ", 0, 7)) {
             String token = zaglavlje.substring(7).trim();
@@ -53,7 +86,8 @@ public class AuthFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private static String izKolacica(HttpServletRequest request) {
+    // M09: Odjava prepoznaje i sesiju predanu kolačićem.
+    static String izKolacica(HttpServletRequest request) {
         Cookie[] kolacici = request.getCookies();
         if (kolacici == null) {
             return null;

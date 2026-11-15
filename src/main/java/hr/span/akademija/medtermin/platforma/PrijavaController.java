@@ -3,6 +3,7 @@ package hr.span.akademija.medtermin.platforma;
 import hr.span.akademija.medtermin.platforma.KorisnikService.Korisnik;
 import hr.span.akademija.medtermin.platforma.KorisnikService.PrijavaZahtjev;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -20,6 +21,8 @@ public class PrijavaController {
     private final TokenStore tokeni;
     private final ResetLozinkeService reset;
     private final AppProperties postavke;
+    @Value("${app.cookie-secure:true}")
+    private boolean secureCookie;
 
     public PrijavaController(KorisnikService korisnici, TokenStore tokeni, ResetLozinkeService reset,
                              AppProperties postavke) {
@@ -31,14 +34,13 @@ public class PrijavaController {
 
     @GetMapping("/")
     public ResponseEntity<String> pocetna() {
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.pocetna()
         String tijelo = """
-                <h1>%s</h1>
-                <p>Naručivanje pregleda, pregled nalaza i ispis potvrda.</p>
-                <ul>
-                <li><a href="/prijava">Prijava</a></li>
-                <li><a href="/api/health">Stanje sustava</a></li>
-                </ul>
+                <h1>%s</h1>%n\
+                <p>Naručivanje pregleda, pregled nalaza i ispis potvrda.</p>%n\
+                <ul>%n\
+                <li><a href="/prijava">Prijava</a></li>%n\
+                <li><a href="/api/health">Stanje sustava</a></li>%n\
+                </ul>%n\
                 """.formatted(Html.escape(postavke.naziv()));
         return Html.odgovor(Html.stranica(postavke.naziv(), tijelo));
     }
@@ -57,8 +59,14 @@ public class PrijavaController {
             return Html.odgovor(obrazacPrijave(returnUrl, "Neispravno korisničko ime ili lozinka."));
         }
         String token = tokeni.izdaj(korisnik.get().prijavljeni());
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
         // TODO(sec): M10 [rucni pregled]: Za HTTPS produkciju predloziti Secure cookie; HttpOnly/SameSite vec postoje. Uskladiti s TLS terminacijom i lokalnim HTTP razvojem. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M10: Secure sprečava slanje kolačića preko običnog HTTP-a; HttpOnly i
+        // SameSite=Lax ostaju uključeni. app.cookie-secure zadano je true, a za
+        // lokalni HTTP razvoj APP_COOKIE_SECURE=false. Produkcija treba HTTPS i true;
+        // postavku treba uskladiti s načinom na koji se TLS završava u infrastrukturi.
         ResponseCookie kolacic = ResponseCookie.from(AuthFilter.KOLACIC, token)
+                .secure(secureCookie)
                 .httpOnly(true)
                 .sameSite("Lax")
                 .path("/")
@@ -91,31 +99,29 @@ public class PrijavaController {
     }
 
     private String obrazacPrijave(String returnUrl, String poruka) {
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.obrazacPrijave(String, String)
         String tijelo = """
-                <h1>Prijava</h1>
-                %s
-                <form method="post" action="/prijava">
-                <label>Korisničko ime <input name="username" autocomplete="username" required></label>
-                <label>Lozinka <input name="password" type="password" autocomplete="current-password" required></label>
-                <input type="hidden" name="returnUrl" value="%s">
-                <p><button type="submit">Prijavi se</button></p>
-                </form>
+                <h1>Prijava</h1>%n\
+                %s%n\
+                <form method="post" action="/prijava">%n\
+                <label>Korisničko ime <input name="username" autocomplete="username" required></label>%n\
+                <label>Lozinka <input name="password" type="password" autocomplete="current-password" required></label>%n\
+                <input type="hidden" name="returnUrl" value="%s">%n\
+                <p><button type="submit">Prijavi se</button></p>%n\
+                </form>%n\
                 """.formatted(poruka == null ? "" : "<p class=\"poruka\">" + Html.escape(poruka) + "</p>",
                 Html.escape(returnUrl));
         return Html.stranica("Prijava – " + postavke.naziv(), tijelo);
     }
 
     private String obrazacNoveLozinke(String token, String poruka) {
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PrijavaController.obrazacNoveLozinke(String, String)
         String tijelo = """
-                <h1>Nova lozinka</h1>
-                %s
-                <form method="post" action="/reset">
-                <input type="hidden" name="token" value="%s">
-                <label>Nova lozinka <input name="novaLozinka" type="password" autocomplete="new-password" required></label>
-                <p><button type="submit">Spremi</button></p>
-                </form>
+                <h1>Nova lozinka</h1>%n\
+                %s%n\
+                <form method="post" action="/reset">%n\
+                <input type="hidden" name="token" value="%s">%n\
+                <label>Nova lozinka <input name="novaLozinka" type="password" autocomplete="new-password" required></label>%n\
+                <p><button type="submit">Spremi</button></p>%n\
+                </form>%n\
                 """.formatted(poruka == null ? "" : "<p class=\"poruka\">" + Html.escape(poruka) + "</p>",
                 Html.escape(token));
         return Html.stranica("Nova lozinka – " + postavke.naziv(), tijelo);
@@ -125,7 +131,17 @@ public class PrijavaController {
         if (returnUrl == null || returnUrl.isBlank()) {
             return "/";
         }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
         // TODO(sec): M08 [rucni pregled]: Otvoreno preusmjeravanje; prihvatiti samo provjerene lokalne putanje i odbiti apsolutne URL-ove i //host. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M08: Ranije je returnUrl bez provjere postao Location zaglavlje, što je
+        // omogućavalo preusmjeravanje na vanjsku stranicu. Prihvaćamo samo putanju
+        // koja počinje jednim '/', bez obrnute kose crte, kontrolnih i '%' znakova.
+        // Sumnjive vrijednosti vraćaju korisnika na '/'; lokalni put poput /moji radi.
+        if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")
+                || returnUrl.indexOf('\\') >= 0 || returnUrl.chars().anyMatch(Character::isISOControl)
+                || returnUrl.indexOf('%') >= 0) {
+            return "/";
+        }
         return returnUrl;
     }
 }

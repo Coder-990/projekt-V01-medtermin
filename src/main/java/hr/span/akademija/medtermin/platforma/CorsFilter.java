@@ -59,7 +59,14 @@ public class CorsFilter extends OncePerRequestFilter {
     }
 
     private boolean dopusten(String origin) {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
         // TODO(sec): M07 [rucni pregled]: Koristiti tocnu konfiguriranu allowlistu origin-a; sada su svi HTTP(S) origini dopusteni uz credentials. Iskoristivost ovisi i o cookie/SameSite pravilima. Izvor/detalji: alati/poslije/pregled-koda.md.
-        return origin.startsWith("http://") || origin.startsWith("https://");
+        // M07: Prije su svi HTTP(S) origini dobivali CORS dozvolu s credentials.
+        // Sada uspoređujemo cijeli Origin s konfiguracijom app.cors.allowed-origins;
+        // podudaranje prefiksa ili proizvoljan HTTPS origin nisu dovoljni. Nepoznati
+        // preflight dobiva 403, a ostali zahtjevi ne dobivaju dopuštena CORS zaglavlja.
+        // Ne kopiramo kontrolne znakove u HTTP zaglavlje ni ako bi ih operater
+        // zabunom unio u konfiguraciju; SLF4J ili parametarsko postavljanje ne uklanja CR/LF.
+        return origin.chars().noneMatch(Character::isISOControl) && dopusteniOrigini.contains(origin);
     }
 }

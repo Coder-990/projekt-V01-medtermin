@@ -1,5 +1,12 @@
 # Alati za sigurnosnu analizu – projekt V01
 
+## Stvarni rezultati provjera
+
+Lokalni ZAP izvještaji prije i poslije nalaze se u `alati/prije/zap-lokalno.html` i `alati/poslije/zap-lokalno.html`; pregled nije bio autentificiran, a Firefox integracija nije radila. OSV izvještaj za Jackson 2.22.1 prijavio je 7 nalaza; testne ovisnosti ažurirane su na 2.22.3, a ponovni OSV pregled nije potvrđen jer je automatska provjera odbila slanje popisa ovisnosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, uz jedno dokumentirano izuzeće i isključen OSS Index.
+
+Za projekt u korijenu koristi `./osv-scan.sh` i `./dependency-check-scan.sh`; oba stvaraju izvještaje samo ako se alat uspješno pokrene. Rezultati i ograničenja: `alati/poslije/README.md`.
+
+
 Program traži da ranjivosti pronađeš **standardnim alatima** i potvrdiš popravak **ponovnim skeniranjem**.
 Koristi barem po jedan alat iz svake skupine (SAST, SCA, DAST) i **spremi izvještaje** u mapu `alati/` (prije i
 poslije popravaka, npr. `alati/prije/`, `alati/poslije/`). Alati prijavljuju i lažno pozitivne nalaze – u
@@ -46,10 +53,10 @@ ruff check medtermin --select S          # Banditova pravila u Ruffu – nalazi 
 | Alat | Java | .NET | Python |
 |---|---|---|---|
 | ugrađeno / osnovno | – | `dotnet list package --vulnerable --include-transitive` (i upozorenja `NU1901–NU1904` pri buildu) | `pip-audit -r requirements.txt` (u `requirements-dev.txt`) |
-| OSV-Scanner | `osv-scanner scan source -r java/` | `dotnet restore --use-lock-file`, zatim `osv-scanner scan source -r dotnet/` | `osv-scanner scan source -r python/` |
+| OSV-Scanner | `./osv-scan.sh` | `dotnet restore --use-lock-file`, zatim `osv-scanner scan source -r dotnet/` | `osv-scanner scan source -r python/` |
 | Trivy | `trivy fs --scanners vuln java/` | `trivy fs --scanners vuln dotnet/` | `trivy fs --scanners vuln python/` |
-| OWASP Dependency-Check | `dependency-check --scan java/ --format HTML --out alati/prije/` (preporučen NVD API ključ; prvo pokretanje dugo traje) | isto, nad `dotnet/` nakon builda | (eksperimentalna podrška za Python – radije pip-audit / OSV) |
-| SBOM (CycloneDX) | `./mvnw -Psca package -DskipTests` | `dotnet tool install --global CycloneDX`, zatim `dotnet CycloneDX MedTermin.sln -o alati/` | `cyclonedx-py requirements requirements.txt -o ../alati/sbom.cdx.json` |
+| OWASP Dependency-Check | `./dependency-check-scan.sh` (preporučen NVD API ključ; prvo pokretanje dugo traje) | isto, nad `dotnet/` nakon builda | (eksperimentalna podrška za Python – radije pip-audit / OSV) |
+| SBOM (CycloneDX) | `./mvnw -Psca cyclonedx:makeAggregateBom -DskipTests` | `dotnet tool install --global CycloneDX`, zatim `dotnet CycloneDX MedTermin.sln -o alati/` | `cyclonedx-py requirements requirements.txt -o ../alati/sbom.cdx.json` |
 
 Za svaku ranjivu komponentu u izvještaju navedi: CVE/GHSA oznaku, je li ranjivi dio **stvarno korišten** u kodu,
 na koju si verziju nadogradio i je li nadogradnja zahtijevala promjene u kodu.

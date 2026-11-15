@@ -19,8 +19,19 @@ public final class JdbcPomoc {
             // TODO(sec): spotbugs OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE [EXPERIMENTAL; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.JdbcPomoc.lambda$umetni$0(String, Object[], Connection) may fail to clean up java.sql.Statement on checked exception
             // TODO(sec): T02 [FindSecBugs SQL_INJECTION_JDBC; provjera]: Pregledani pozivatelji koriste fiksni SQL i bind parametre; ne oznacavati potvrdenom injekcijom. Zadrzati taj ugovor i provjeravati nove pozive. Izvor/detalji: alati/poslije/pregled-koda.md.
             PreparedStatement ps = con.prepareStatement(sql, new String[] {"ID"});
-            new ArgumentPreparedStatementSetter(argumenti).setValues(ps);
-            return ps;
+            // OBL_UNSATISFIED_OBLIGATION: JdbcTemplate zatvara statement tek nakon što
+            // ga tvorac vrati. Ako vezivanje parametara ne uspije, ovdje ga zatvaramo.
+            try {
+                new ArgumentPreparedStatementSetter(argumenti).setValues(ps);
+                return ps;
+            } catch (java.sql.SQLException | RuntimeException e) {
+                try {
+                    ps.close();
+                } catch (java.sql.SQLException zatvaranje) {
+                    e.addSuppressed(zatvaranje);
+                }
+                throw e;
+            }
         }, kljuc);
         Number id = kljuc.getKey();
         if (id == null) {

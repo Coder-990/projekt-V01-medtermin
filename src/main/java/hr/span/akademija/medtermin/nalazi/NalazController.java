@@ -6,6 +6,14 @@ import hr.span.akademija.medtermin.platforma.PrijavljeniKorisnik;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.DirectoryStream;
+import java.nio.file.SecureDirectoryStream;
+import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.channels.Channels;
+import java.util.Set;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -53,7 +61,6 @@ public class NalazController {
     private final Pohrana pohrana;
 
     public NalazController(JdbcTemplate jdbc, Pohrana pohrana) {
-        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.nalazi.NalazController(JdbcTemplate, Pohrana) may expose internal representation by storing an externally mutable object into NalazController.jdbc
         this.jdbc = jdbc;
         this.pohrana = pohrana;
     }
@@ -69,18 +76,24 @@ public class NalazController {
     public ResponseEntity<?> nalaz(@PathVariable long id, @RequestParam(required = false) String format,
                                    PrijavljeniKorisnik korisnik) throws IOException {
         Nalaz nalaz = pronadi(id).orElseThrow(() -> ApiException.nijePronadeno("Nalaz nije pronađen."));
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M01 [rucni pregled]: Provjeriti vlasnika prije parsiranja formata; nevaljani format preskace autorizaciju i vraca tudi nalaz. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M01: Ranije je provjera vlasnika bila unutar obrade formata; nepoznat format
+        // preskočio ju je i vratio JSON tuđeg nalaza. Sada prije izbora JSON-a ili PDF-a
+        // dopuštamo samo vlasnika ili administratora, a ostalima vraćamo 404.
+        // Pokriveno u NalaziFunkcionalniTest.nevaljaniFormatVracaNalazUzNapomenu.
+        if (!korisnik.isAdmin() && !nalaz.pacijent().equals(korisnik.username())) {
+            throw ApiException.nijePronadeno("Nalaz nije pronađen.");
+        }
         String trazeni = format == null ? "json" : format;
         Format odabrani = Format.JSON;
         String napomena = null;
-        // TODO(sec): M01 [rucni pregled]: Provjeriti vlasnika prije parsiranja formata; nevaljani format preskace autorizaciju i vraca tudi nalaz. Izvor/detalji: alati/poslije/pregled-koda.md.
         try {
             odabrani = Format.valueOf(trazeni.trim().toUpperCase(Locale.ROOT));
-            if (!korisnik.isAdmin() && !nalaz.pacijent().equals(korisnik.username())) {
-                throw ApiException.nijePronadeno("Nalaz nije pronađen.");
-            }
         } catch (IllegalArgumentException e) {
-            log.warn("Neuspjela obrada zahtjeva za nalaz {}", id, e);
-            napomena = "Format nije prepoznat, prikazuje se JSON (" + e + ")";
+            log.warn("Neuspjela obrada formata za nalaz {}", id);
+            // M01/M06: Ne vraćamo niti logiramo tekst iznimke koji može sadržavati korisnički unos.
+            napomena = "Format nije prepoznat, prikazuje se JSON.";
         }
         return prikazi(nalaz, odabrani, napomena);
     }
@@ -89,23 +102,57 @@ public class NalazController {
     @GetMapping("/preuzmi")
     public ResponseEntity<byte[]> preuzmi(@RequestParam String datoteka, PrijavljeniKorisnik korisnik)
             throws IOException {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
         // TODO(sec): M02 [rucni pregled]: contains(username) nije provjera vlasnistva; vezati dokument uz vlasnika u bazi i provjeriti kanonsku putanju unutar pohrane (../, apsolutne putanje, symlink). Izvor/detalji: alati/poslije/pregled-koda.md.
-        if (!korisnik.isAdmin() && !datoteka.contains(korisnik.username())) {
+        // M02: Naziv koji sadrži korisničko ime nije dokaz vlasništva: mogao bi biti
+        // naziv tuđeg dokumenta. Zato tražimo zapis u tablici nalazi i za običnog
+        // korisnika zahtijevamo podudaranje pacijenta; administrator može dohvatiti
+        // i tuđi registrirani dokument. Nepostojeći ili nedopušten zapis vraća 404.
+        Integer broj = korisnik.isAdmin()
+                ? jdbc.queryForObject("SELECT COUNT(*) FROM nalazi WHERE datoteka = ?", Integer.class, datoteka)
+                : jdbc.queryForObject("SELECT COUNT(*) FROM nalazi WHERE datoteka = ? AND pacijent = ?", Integer.class, datoteka, korisnik.username());
+        if (broj == null || broj == 0) {
             throw ApiException.nijePronadeno("Datoteka nije pronađena.");
         }
-        Path putanja = pohrana.dokumenti().resolve(datoteka);
-        if (!Files.isRegularFile(putanja)) {
-            throw ApiException.nijePronadeno("Datoteka nije pronađena.");
-        }
-        byte[] sadrzaj = Files.readAllBytes(putanja);
+        byte[] sadrzaj = procitajSigurno(datoteka);
         ContentDisposition privitak = ContentDisposition.attachment()
                 // TODO(sec): spotbugs NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE [STYLE; provjeriti nalaz]: Possible null pointer dereference in hr.span.akademija.medtermin.nalazi.NalazController.preuzmi(String, PrijavljeniKorisnik) due to return value of called method
-                .filename(putanja.getFileName().toString(), StandardCharsets.UTF_8)
+                .filename(datoteka, StandardCharsets.UTF_8)
                 .build();
         return ResponseEntity.ok()
                 .contentType(TEXT_PLAIN_UTF8)
                 .header(HttpHeaders.CONTENT_DISPOSITION, privitak.toString())
                 .body(sadrzaj);
+    }
+
+    // M02: Ime je jedna komponenta, bez apsolutne putanje ili podmapa. DirectoryStream
+    // drži otvorenu mapu, a SecureDirectoryStream otvara datoteku relativno na taj
+    // deskriptor uz NOFOLLOW_LINKS. Tako zamjena imena symlinkom između provjere i
+    // čitanja ne može preusmjeriti čitanje izvan pohrane. Ako OS nema sigurni stream,
+    // odbijamo čitanje umjesto povratka na nesigurnu provjeru pa otvaranje.
+    private byte[] procitajSigurno(String naziv) throws IOException {
+        Path relativna = Path.of(naziv);
+        if (relativna.isAbsolute() || relativna.getNameCount() != 1
+                || naziv.equals(".") || naziv.equals("..")) {
+            throw ApiException.nijePronadeno("Datoteka nalaza nije pronađena.");
+        }
+        try (DirectoryStream<Path> mapa = Files.newDirectoryStream(pohrana.dokumenti())) {
+            if (!(mapa instanceof SecureDirectoryStream<Path> sigurnaMapa)) {
+                throw new IOException("Datotečni sustav ne podržava sigurno otvaranje dokumenata.");
+            }
+            BasicFileAttributeView pogled = sigurnaMapa.getFileAttributeView(relativna,
+                    BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+            if (!pogled.readAttributes().isRegularFile()) {
+                throw ApiException.nijePronadeno("Datoteka nalaza nije pronađena.");
+            }
+            try (var kanal = sigurnaMapa.newByteChannel(relativna,
+                    Set.<OpenOption>of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS));
+                 var ulaz = Channels.newInputStream(kanal)) {
+                return ulaz.readAllBytes();
+            }
+        } catch (NoSuchFileException e) {
+            throw ApiException.nijePronadeno("Datoteka nalaza nije pronađena.");
+        }
     }
 
     private Optional<Nalaz> pronadi(long id) {
@@ -114,12 +161,7 @@ public class NalazController {
     }
 
     private ResponseEntity<?> prikazi(Nalaz nalaz, Format format, String napomena) throws IOException {
-        String sadrzaj;
-        try {
-            sadrzaj = Files.readString(pohrana.dokumenti().resolve(nalaz.datoteka()), StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            throw ApiException.nijePronadeno("Datoteka nalaza nije pronađena.");
-        }
+        String sadrzaj = new String(procitajSigurno(nalaz.datoteka()), StandardCharsets.UTF_8);
         if (format == Format.PDF) {
             byte[] pdf = PdfDokument.izradi("Nalaz: " + nalaz.naziv(), sadrzaj.lines().toList());
             return ResponseEntity.ok()

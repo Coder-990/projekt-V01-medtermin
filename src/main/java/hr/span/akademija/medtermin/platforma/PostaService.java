@@ -6,8 +6,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -21,7 +22,8 @@ import org.springframework.stereotype.Service;
 public class PostaService {
 
     private static final Logger log = LoggerFactory.getLogger(PostaService.class);
-    private static final DateTimeFormatter OZNAKA_VREMENA = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+    private static final Set<PosixFilePermission> PRIVATNE_DOZVOLE =
+            PosixFilePermissions.fromString("rw-------");
 
     private final Pohrana pohrana;
     private final AppProperties postavke;
@@ -36,29 +38,46 @@ public class PostaService {
     public void posaljiUputeZaLozinku(KorisnikService.Korisnik korisnik, String token) {
         String port = okruzenje.getProperty("local.server.port", okruzenje.getProperty("server.port", "8080"));
         String poveznica = "http://localhost:" + port + "/reset?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.PostaService.posaljiUputeZaLozinku(KorisnikService$Korisnik, String)
         String poruka = """
-                Za: %s
-                Predmet: %s – promjena lozinke
-
-                Poštovani,
-
-                zaprimili smo zahtjev za promjenu lozinke za korisnički račun %s.
-                Novu lozinku možete postaviti na poveznici:
-                %s
-
-                Token: %s
-
-                Ako niste zatražili promjenu lozinke, zanemarite ovu poruku.
+                Za: %s%n\
+                Predmet: %s – promjena lozinke%n\
+                %n\
+                Poštovani,%n\
+                %n\
+                zaprimili smo zahtjev za promjenu lozinke za korisnički račun %s.%n\
+                Novu lozinku možete postaviti na poveznici:%n\
+                %s%n\
+                %n\
+                Token: %s%n\
+                %n\
+                Ako niste zatražili promjenu lozinke, zanemarite ovu poruku.%n\
                 """.formatted(korisnik.email(), postavke.naziv(), korisnik.username(), poveznica, token);
-        Path datoteka = pohrana.posta()
-                .resolve(korisnik.username() + "-" + LocalDateTime.now().format(OZNAKA_VREMENA) + ".txt");
         try {
-            Files.createDirectories(pohrana.posta());
+            Path mapa = pohrana.posta();
+            // Datoteke s reset tokenima služe samo za lokalni razvoj. Ne mijenjamo
+            // postojeće dozvole: odbijamo nesigurnu ili simbolički povezanu mapu.
+            Files.createDirectories(mapa, PosixFilePermissions.asFileAttribute(
+                    PosixFilePermissions.fromString("rwx------")));
+            if (Files.isSymbolicLink(mapa) || !Files.getFileStore(mapa).supportsFileAttributeView("posix")) {
+                throw new IOException("Lokalna pošta zahtijeva privatnu POSIX mapu bez simboličke poveznice.");
+            }
+            Set<PosixFilePermission> dozvoleMape = Files.getPosixFilePermissions(mapa);
+            if (dozvoleMape.stream().anyMatch(d -> d.name().startsWith("GROUP_") || d.name().startsWith("OTHERS_"))) {
+                throw new IOException("Mapa pošte dostupna je drugim korisnicima.");
+            }
+            if (!korisnik.username().matches("[A-Za-z0-9._-]{3,50}")) {
+                throw new IOException("Neispravno korisničko ime za lokalnu poštu.");
+            }
+            // CREATE_NEW putem createTempFile sprječava koliziju dvaju zahtjeva;
+            // token se stvara s pravima 0600, bez čitanja za grupu i ostale.
+            Path datoteka = Files.createTempFile(mapa, korisnik.username() + "-", ".txt",
+                    PosixFilePermissions.asFileAttribute(PRIVATNE_DOZVOLE));
             Files.writeString(datoteka, poruka, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        log.info("Poslana poruka za promjenu lozinke korisniku {}", korisnik.username());
+        // CRLF_INJECTION_LOGS: ne zapisujemo ime iz baze; token i sadržaj poruke
+        // nikada ne izlaze u aplikacijski log.
+        log.info("Pripremljena lokalna poruka za promjenu lozinke");
     }
 }

@@ -44,7 +44,6 @@ public class TerminController {
     private final UvozTermina uvoz;
 
     public TerminController(JdbcTemplate jdbc, UvozTermina uvoz) {
-        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.termini.TerminController(JdbcTemplate, UvozTermina) may expose internal representation by storing an externally mutable object into TerminController.jdbc
         this.jdbc = jdbc;
         this.uvoz = uvoz;
     }
@@ -87,7 +86,9 @@ public class TerminController {
             termin.put("napomena", s.napomena());
             uvezeni.add(termin);
         }
-        log.info("Korisnik {} uvezao je {} termina", korisnik.username(), uvezeni.size());
+        // CRLF_INJECTION_LOGS: ne zapisujemo ime iz baze koje je moglo nastati
+        // izvan validirane registracije; broj uvezenih termina dovoljan je za događaj.
+        log.info("Uvezeno je {} termina", uvezeni.size());
         Map<String, Object> odgovor = new LinkedHashMap<>();
         odgovor.put("uvezeno", uvezeni.size());
         odgovor.put("termini", uvezeni);

@@ -18,27 +18,30 @@ public final class Html {
     }
 
     public static String stranica(String naslov, String tijelo) {
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.platforma.Html.stranica(String, String)
         return """
-                <!DOCTYPE html>
-                <html lang="hr">
-                <head>
-                <meta charset="UTF-8">
-                <title>%s</title>
-                <style>
-                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-                label { display: block; margin-top: .75rem; }
-                .poruka { color: #b00020; }
-                </style>
-                </head>
-                <body>
-                %s
-                </body>
-                </html>
+                <!DOCTYPE html>%n\
+                <html lang="hr">%n\
+                <head>%n\
+                <meta charset="UTF-8">%n\
+                <title>%s</title>%n\
+                <style>%n\
+                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }%n\
+                label { display: block; margin-top: .75rem; }%n\
+                .poruka { color: #b00020; }%n\
+                </style>%n\
+                </head>%n\
+                <body>%n\
+                %s%n\
+                </body>%n\
+                </html>%n\
                 """.formatted(escape(naslov), tijelo);
     }
 
     public static ResponseEntity<String> odgovor(String html) {
-        return ResponseEntity.ok().contentType(TEXT_HTML_UTF8).body(html);
+        // CSP ograničava učitavanje vanjskih sadržaja i slanje obrazaca na vlastiti
+        // origin; inline stil je potreban postojećim stranicama bez JavaScripta.
+        return ResponseEntity.ok().contentType(TEXT_HTML_UTF8)
+                .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+                .body(html);
     }
 }

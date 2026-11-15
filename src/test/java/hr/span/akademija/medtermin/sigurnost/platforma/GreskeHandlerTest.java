@@ -42,8 +42,9 @@ class GreskeHandlerTest {
     @Test
     @DisplayName("neispravanZahtjev vraća 400 i poruku Neispravan zahtjev.")
     void neispravanZahtjev() {
+        // Spring 7 zahtijeva ulaznu HTTP poruku u konstruktoru iznimke; ponašanje 400 ostaje isto.
         ResponseEntity<Map<String, String>> odgovor = handler.neispravanZahtjev(
-                new HttpMessageNotReadableException("Greška pri čitanju"));
+                new HttpMessageNotReadableException("Greška pri čitanju", new org.springframework.mock.http.MockHttpInputMessage(new byte[0])));
 
         assertThat(odgovor.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(odgovor.getBody()).containsEntry("greska", "Neispravan zahtjev.");

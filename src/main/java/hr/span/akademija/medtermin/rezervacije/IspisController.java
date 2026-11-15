@@ -31,30 +31,29 @@ public class IspisController {
         Rezervacija r = rezervacije.pronadi(id)
                 .filter(x -> korisnik.isAdmin() || x.pacijent().equals(korisnik.username()))
                 .orElseThrow(() -> ApiException.nijePronadeno("Rezervacija nije pronađena."));
-        // TODO(sec): spotbugs VA_FORMAT_STRING_USES_NEWLINE [BAD_PRACTICE; provjeriti nalaz]: Format string should use %n rather than \n in hr.span.akademija.medtermin.rezervacije.IspisController.potvrda(long, PrijavljeniKorisnik)
         String html = """
-                <!DOCTYPE html>
-                <html lang="hr">
-                <head>
-                <meta charset="UTF-8">
-                <title>Potvrda rezervacije br. %d</title>
-                <style>
-                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; }
-                dt { font-weight: bold; margin-top: .5rem; }
-                </style>
-                </head>
-                <body>
-                <h1>%s</h1>
-                <h2>Potvrda rezervacije br. %d</h2>
-                <dl>
-                <dt>Pacijent</dt><dd>%s</dd>
-                <dt>Liječnik</dt><dd>%s</dd>
-                <dt>Termin</dt><dd>%s</dd>
-                <dt>Napomena</dt><dd>%s</dd>
-                </dl>
-                <p>Molimo dođite 10 minuta prije termina i ponesite iskaznicu zdravstvenog osiguranja.</p>
-                </body>
-                </html>
+                <!DOCTYPE html>%n\
+                <html lang="hr">%n\
+                <head>%n\
+                <meta charset="UTF-8">%n\
+                <title>Potvrda rezervacije br. %d</title>%n\
+                <style>%n\
+                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; }%n\
+                dt { font-weight: bold; margin-top: .5rem; }%n\
+                </style>%n\
+                </head>%n\
+                <body>%n\
+                <h1>%s</h1>%n\
+                <h2>Potvrda rezervacije br. %d</h2>%n\
+                <dl>%n\
+                <dt>Pacijent</dt><dd>%s</dd>%n\
+                <dt>Liječnik</dt><dd>%s</dd>%n\
+                <dt>Termin</dt><dd>%s</dd>%n\
+                <dt>Napomena</dt><dd>%s</dd>%n\
+                </dl>%n\
+                <p>Molimo dođite 10 minuta prije termina i ponesite iskaznicu zdravstvenog osiguranja.</p>%n\
+                </body>%n\
+                </html>%n\
                 """.formatted(r.id(), tekst(postavke.naziv()), r.id(), tekst(r.pacijent()), tekst(r.lijecnik()),
                 r.pocetak() == null ? "" : VRIJEME.format(r.pocetak()), tekst(r.napomena()));
         return ResponseEntity.ok()

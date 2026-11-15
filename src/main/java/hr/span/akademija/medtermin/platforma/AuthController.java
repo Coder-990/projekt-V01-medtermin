@@ -76,6 +76,15 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("poruka", "Lozinka je promijenjena."));
     }
 
+    // M09: Odjava opoziva token kojim je zahtjev autentificiran.
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Void> logout(jakarta.servlet.http.HttpServletRequest zahtjev, PrijavljeniKorisnik korisnik) {
+        String token = AuthFilter.izZaglavlja(zahtjev);
+        if (token == null) token = AuthFilter.izKolacica(zahtjev);
+        tokeni.opozovi(token);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/ja")
     public Map<String, Object> ja(PrijavljeniKorisnik prijavljeni) {
         Korisnik k = korisnici.pronadi(prijavljeni.username())

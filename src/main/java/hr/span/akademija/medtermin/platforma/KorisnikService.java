@@ -24,9 +24,13 @@ public class KorisnikService {
 
     private final JdbcTemplate jdbc;
     private final LozinkaHasher hasher;
+    // M09: Zajednička pohrana omogućuje opoziv svih sesija nakon promjene lozinke.
+    private TokenStore tokeni;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void postaviTokenStore(TokenStore tokeni) { this.tokeni = tokeni; }
 
     public KorisnikService(JdbcTemplate jdbc, LozinkaHasher hasher) {
-        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.platforma.KorisnikService(JdbcTemplate, LozinkaHasher) may expose internal representation by storing an externally mutable object into KorisnikService.jdbc
         this.jdbc = jdbc;
         this.hasher = hasher;
     }
@@ -57,10 +61,23 @@ public class KorisnikService {
         if (zahtjev == null || zahtjev.username() == null || zahtjev.password() == null) {
             return Optional.empty();
         }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
         // TODO(sec): M06 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Record zahtjev ispisuje i password u cistom tekstu; ukloniti tajne iz logova i sprijeciti CR/LF injekciju. Izvor/detalji: alati/poslije/pregled-koda.md.
-        log.info("Zahtjev za prijavu: {}", zahtjev);
-        return pronadi(zahtjev.username())
+        // M06: Record zahtjeva sadrži lozinku i korisničko ime koje može sadržavati
+        // kontrolne znakove. Zapisujemo samo događaj prijave bez tih vrijednosti;
+        // time ne izlažemo lozinku i ne dopuštamo lažne retke u ovom logu.
+        log.info("Zahtjev za prijavu");
+        Optional<Korisnik> korisnik = pronadi(zahtjev.username())
                 .filter(k -> hasher.provjeri(zahtjev.password(), k.passwordHash()));
+        // M05: Tek nakon ispravne lozinke stari SHA-256 zamjenjujemo BCrypt zapisom.
+        // Uvjet WHERE uključuje stari hash kako migracija ne bi prepisala lozinku
+        // promijenjenu u međuvremenu. Lozinku dulju od 72 UTF-8 bajta ne migriramo
+        // automatski jer BCrypt ima tu granicu; korisnik je mora promijeniti.
+        korisnik.filter(k -> k.passwordHash().matches("[0-9a-f]{64}")
+                && zahtjev.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 72).ifPresent(k ->
+                jdbc.update("UPDATE korisnici SET password_hash = ? WHERE id = ? AND password_hash = ?",
+                        hasher.hash(zahtjev.password()), k.id(), k.passwordHash()));
+        return korisnik;
     }
 
     public Korisnik registriraj(RegistracijaZahtjev zahtjev) {
@@ -92,14 +109,21 @@ public class KorisnikService {
                 username, hasher.hash(lozinka), email, ime, prezime, uloga, oib);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void promijeniLozinku(String username, String novaLozinka) {
         provjeriLozinku(novaLozinka);
         jdbc.update("UPDATE korisnici SET password_hash = ? WHERE username = ?", hasher.hash(novaLozinka), username);
-        log.info("Promijenjena lozinka korisnika {}", username);
+        // M03/M04: Promjena lozinke poništava i ostale ranije izdane reset tokene;
+        // u istoj su transakciji s promjenom hasha, kako stari link ne bi ostao valjan.
+        jdbc.update("UPDATE reset_tokeni SET iskoristen = TRUE WHERE username = ? AND iskoristen = FALSE", username);
+        // M09: Promjena ili reset lozinke opoziva sve postojeće sesije korisnika.
+        if (tokeni != null) tokeni.opozoviKorisnika(username);
+        log.info("Promijenjena lozinka");
     }
 
+    // M05: Ograničenje na 72 UTF-8 bajta sprječava da BCrypt prihvati samo početak duže lozinke.
     public static void provjeriLozinku(String lozinka) {
-        if (lozinka == null || lozinka.length() < MIN_DULJINA_LOZINKE) {
+        if (lozinka == null || lozinka.length() < MIN_DULJINA_LOZINKE || lozinka.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
             throw ApiException.neispravno("Lozinka mora imati najmanje " + MIN_DULJINA_LOZINKE + " znakova.");
         }
     }

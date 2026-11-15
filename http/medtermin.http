@@ -1,7 +1,11 @@
 ### MedTermin – primjeri zahtjeva (IntelliJ HTTP Client / VS Code REST Client)
+# Pokreni aplikaciju lokalno: ./mvnw spring-boot:run
+# Početni računi, termini i nalazi stvaraju se pri pokretanju.
+# H2 baza je u memoriji: nakon ponovnog pokretanja potrebno je ponoviti registraciju.
+# Prijava vraća JSON s poljem token. Njegovu vrijednost kopiraj u @token ispod,
+# bez navodnika; zatim pošalji zaštićene zahtjeve s Authorization: Bearer.
 @host = http://localhost:8080
-# Token iz odgovora na prijavu kopiraj u @token.
-@token = ZALIJEPI_TOKEN
+@token = GHmach9__aAv87gu5MbEVpA-zBZLfVksefYFn_EXy-4
 
 ### Provjera rada
 GET {{host}}/api/health
@@ -27,6 +31,12 @@ POST {{host}}/api/auth/register
 Content-Type: application/json
 
 {"username": "petra", "password": "Petra12345!", "email": "petra@primjer.hr", "ime": "Petra", "prezime": "Perić"}
+
+### Prijava registriranog korisnika (prvo pošalji registraciju iznad)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "petra", "password": "Petra12345!"}
 
 ### Liječnici sortirani po prezimenu
 GET {{host}}/api/lijecnici?sort=prezime&smjer=asc

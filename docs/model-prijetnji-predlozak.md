@@ -1,5 +1,12 @@
 # Model prijetnji (STRIDE) – MedTermin – naručivanje pregleda, varijanta V01
 
+## Stanje modela
+
+Tablice i DFD opisuju izvornu lokalnu aplikaciju. Nakon popravaka treba uzeti u obzir BCrypt, nasumične jednokratne reset tokene, autorizaciju nalaza i ograničeni CORS; te mjere ne uklanjaju sve rizike. U lokalnom ZAP pregledu ostala su upozorenja o anti-CSRF tokenima i CSP `style-src unsafe-inline`, koja zahtijevaju dodatnu procjenu.
+
+
+> Tablice niže opisuju **izvorno stanje prije popravaka** i povijesnu procjenu, ne aktualno ponašanje. Ažurirane mjere i otvoreni rizici nalaze se u [pregledu provjera](../alati/poslije/README.md). Navedene ocjene nisu CVSS, a dinamička iskoristivost svih scenarija nije potvrđena.
+
 Model prijetnji izrađen je prema metodologiji STRIDE kako bi se sustavno identificirale potencijalne prijetnje, procijenili rizici i odredile zaštitne mjere za web aplikaciju poliklinike MedTermin (varijanta V01). Na kraju analize model je dopunjen stvarno utvrđenim nalazima iz pregleda koda i sigurnosnih skeniranja.
 
 ---
@@ -172,7 +179,7 @@ Legenda kategorija STRIDE:
 
 ## 5. Zaključak
 
-Modeliranjem prijetnji po metodologiji STRIDE identificirano je ukupno 15 potencijalnih sigurnosnih rizika, od kojih se **9 pokazalo stvarno ugrađenim ranjivostima** aplikacije MedTermin (uz dodatni visokorizični nalaz ranjive komponente SnakeYAML):
+Modeliranjem prijetnji po metodologiji STRIDE identificirano je ukupno 15 potencijalnih sigurnosnih rizika, od kojih se **9 je u početnom pregledu identificirano kao sigurnosni problem** aplikacije MedTermin (uz dodatni visokorizični nalaz ranjive komponente SnakeYAML):
 
 1. **Ranjivosti koje su se pokazale stvarnima:**
    - **BOLA autorizacijski propust (N-01):** Logička greška u redoslijedu obrade iznimke u `NalazController` izravno omogućuje pacijentima pristup tuđim medicinskim nalazima.

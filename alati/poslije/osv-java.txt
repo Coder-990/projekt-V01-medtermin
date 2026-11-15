@@ -1,0 +1,5 @@
+Starting filesystem walk for root: /
+Scanned /src/target/bom.json file and found 86 packages
+End status: 0 dirs visited, 1 inodes visited, 1 Extract calls, 836.657µs elapsed, 836.727µs wall time
+
+No issues found

@@ -121,20 +121,48 @@ class PlatformaJedinicniTest {
     }
 
     @Test
-    @DisplayName("LozinkaHasher baca IllegalStateException kad SHA-256 nije dostupan")
-    void lozinkaHasherNedostupanSha() {
-        java.security.Provider sun = java.security.Security.getProvider("SUN");
-        try {
-            java.security.Security.removeProvider("SUN");
-            LozinkaHasher hasher = new LozinkaHasher();
-            assertThatThrownBy(() -> hasher.hash("Lozinka123!"))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("SHA-256 nije dostupan");
-        } finally {
-            if (sun != null) {
-                java.security.Security.insertProviderAt(sun, 1);
-            }
+    @DisplayName("Lozinke imaju nasumičnu sol i podržavaju staru SHA-256 vrijednost")
+    void lozinkaHasherMigracija() {
+        LozinkaHasher hasher = new LozinkaHasher();
+        String prvi = hasher.hash("Lozinka123!");
+        assertThat(prvi).isNotEqualTo(hasher.hash("Lozinka123!"));
+        assertThat(hasher.provjeri("Lozinka123!", prvi)).isTrue();
+        assertThat(hasher.provjeri("abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")).isTrue();
+    }
+
+    @Test
+    void sesijeIstjecuIOpozivajuSe() {
+        java.time.Instant sada = java.time.Instant.parse("2026-01-01T00:00:00Z");
+        TokenStore store = new TokenStore(java.time.Clock.fixed(sada, java.time.ZoneOffset.UTC));
+        PrijavljeniKorisnik k = new PrijavljeniKorisnik(1, "ana", "KORISNIK");
+        String token = store.izdaj(k);
+        assertThat(store.korisnik(token)).isEqualTo(k);
+        store.opozoviKorisnika("ana");
+        assertThat(store.korisnik(token)).isNull();
+        // Posebni sat koji se može pomaknuti provjerava i istek iste sesije.
+        class Sat extends java.time.Clock {
+            java.time.Instant vrijeme = sada;
+            public java.time.ZoneId getZone() { return java.time.ZoneOffset.UTC; }
+            public java.time.Clock withZone(java.time.ZoneId z) { return this; }
+            public java.time.Instant instant() { return vrijeme; }
         }
+        Sat sat = new Sat();
+        TokenStore s = new TokenStore(sat);
+        String t = s.izdaj(k);
+        sat.vrijeme = sada.plus(java.time.Duration.ofHours(8));
+        assertThat(s.korisnik(t)).isNull();
+    }
+
+    @Test
+    @DisplayName("Početni korisnici stvaraju se pri pokretanju bez dodatnih postavki")
+    void pocetniRacuniStvarajuSeAutomatski() throws Exception {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        Pohrana pohrana = mock(Pohrana.class);
+        KorisnikService korisnici = mock(KorisnikService.class);
+        var pocetni = new hr.span.akademija.medtermin.PocetniPodaci(jdbc, korisnici, pohrana);
+        pocetni.run();
+        org.mockito.Mockito.verify(korisnici).kreiraj("ana", "Ana12345!", "ana@primjer.hr",
+                "Ana", "Anić", "KORISNIK", "48291736504");
     }
 
     @Test
@@ -152,6 +180,26 @@ class PlatformaJedinicniTest {
     }
 
     @Test
+    void postojeciKorisniciNeStvarajuSePonovno() throws Exception {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(anyString(), org.mockito.ArgumentMatchers.eq(Integer.class))).thenReturn(1);
+        Pohrana pohrana = mock(Pohrana.class);
+        KorisnikService korisnici = mock(KorisnikService.class);
+        var pocetni = new hr.span.akademija.medtermin.PocetniPodaci(jdbc, korisnici, pohrana);
+        pocetni.run();
+        org.mockito.Mockito.verify(korisnici, org.mockito.Mockito.never())
+                .kreiraj(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void postojeceDatotekeSeNePrepisuju(@TempDir Path temp) throws Exception {
+        var pohrana = new Pohrana(new AppProperties("test", temp.toString(), temp.toString(), null));
+        pohrana.zapisiAkoNePostoji("nalaz.txt", "prvi");
+        pohrana.zapisiAkoNePostoji("nalaz.txt", "drugi");
+        assertThat(Files.readString(temp.resolve("nalaz.txt"))).isEqualTo("prvi");
+    }
+
+    @Test
     @DisplayName("AppProperties dopusteniOrigini pokriva null i prazne unose")
     void appPropertiesOrigini() {
         AppProperties bezCorsa = new AppProperties("Naziv", "dir1", "dir2", null);
@@ -163,6 +211,19 @@ class PlatformaJedinicniTest {
         AppProperties corsSPraznim = new AppProperties("Naziv", "dir1", "dir2",
                 new Cors(List.of("  ", " http://a.com ", "")));
         assertThat(corsSPraznim.dopusteniOrigini()).containsExactly("http://a.com");
+    }
+
+    @Test
+    void corsOdbijaKontrolneZnakoveICakIKadSuUListi() throws Exception {
+        String losOrigin = "https://primjer.hr\r\nX-Lazno: da";
+        CorsFilter filter = new CorsFilter(new AppProperties("test", "tmp", "tmp", new Cors(List.of(losOrigin))));
+        MockHttpServletRequest req = new MockHttpServletRequest("OPTIONS", "/api/ja");
+        req.addHeader("Origin", losOrigin);
+        req.addHeader("Access-Control-Request-Method", "GET");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        filter.doFilter(req, res, mock(FilterChain.class));
+        assertThat(res.getStatus()).isEqualTo(403);
+        assertThat(res.getHeader("Access-Control-Allow-Origin")).isNull();
     }
 
     @Test

@@ -9,7 +9,8 @@ import io
 import json
 import re
 import tokenize
-import xml.etree.ElementTree as ET
+# Plan, završna provjera: nepouzdani XML izvještaji obrađuju se bez vanjskih entiteta.
+from defusedxml import ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -136,7 +137,12 @@ def main():
 
     spotbugs = OUT / "spotbugs-java.xml"
     if spotbugs.exists():
-        bugs = list(ET.parse(spotbugs).getroot().iter("BugInstance"))
+        # Ograniči količinu XML-a koju parser učitava u memoriju.
+        with spotbugs.open("rb") as izvjestaj:
+            podaci = izvjestaj.read(20_000_001)
+        if len(podaci) > 20_000_000:
+            raise ValueError("XML izvještaj je prevelik")
+        bugs = list(ET.fromstring(podaci).iter("BugInstance"))
         counts["SpotBugs"] = len(bugs)
         for bug in bugs:
             locations = [sl for sl in bug.iter("SourceLine") if sl.get("sourcepath") and sl.get("start")]

@@ -21,19 +21,19 @@ Direktorij `poslije` ovdje označava novu provjeru nakon ranijih izvještaja. Ne
 | M11 / visok | `LijecnikController.popis` | Semgrep i FindSecBugs: parametri `sort` i `smjer` iz zahtjeva ulaze u SQL konkatenacijom. Doseg napada ovisi o bazi i SQL sintaksi; nije izvođen napad. | Mapirati dozvoljene stupce i strogo ASC/DESC. Nazivi stupaca ne mogu se zamijeniti običnim bind parametrom `?`. |
 | M12 / srednji | `RezervacijaService.kreiraj` | Log cijelog recorda sadrži OIB i slobodnu napomenu; FindSecBugs upozorava i na CRLF. | Minimalan log bez OIB-a i sadržaja napomene; sigurna obrada kontrolnih znakova. |
 
-TODO komentari s istim ID-ovima dodani su uz odgovarajuća mjesta u `src/main/java/hr/span/akademija/medtermin`. Nijedan predloženi popravak nije implementiran.
+TODO komentari s istim ID-ovima dodani su uz odgovarajuća mjesta u `../src/main/java/hr/span/akademija/medtermin`. Nijedan predloženi popravak nije implementiran.
 
 ## Što su alati stvarno prijavili
 
 ### Semgrep
 
-[Izvorni SARIF](semgrep-java.sarif): **6 nalaza**, 292 pravila, 64 pregledane mete. Dva nalaza označavaju istu SQL injekciju M11; četiri se odnose na Python XML parsiranje u `oznacavanje-ranjovisti.py` i `spotbugs-pregled.py`.
+[Izvorni SARIF](usredIspravka/semgrep-java.sarif): **6 nalaza**, 292 pravila, 64 pregledane mete. Dva nalaza označavaju istu SQL injekciju M11; četiri se odnose na Python XML parsiranje u `../scripts/oznacavanje-ranjovisti.py` i `../../scripts/spotbugs-pregled.py`.
 
 Python nalazi nisu ranjivosti javnog Java endpointa. Rizik ovisi o tome jesu li ulazni XML izvještaji nepouzdani te o parseru i verziji Expat-a. Prijedlog je za nepouzdane izvještaje koristiti `defusedxml` i ograničiti veličinu ulaza. Nije potvrđen XXE napad u tim skriptama. Skeniranje poštuje git ignore, ograničenja veličine i odabir datoteka; čist rezultat nije dokaz odsutnosti ranjivosti.
 
 ### SpotBugs s FindSecBugsom
 
-[XML](spotbugs-java.xml) · [čitljiv popis](spotbugs-java.txt): **57 zapisa**.
+[XML](usredIspravka/spotbugs-java.xml) · [čitljiv popis](usredIspravka/spotbugs-java.txt): **57 zapisa**.
 
 | Vrsta | Broj | Tumačenje |
 | --- | ---: | --- |
@@ -50,7 +50,7 @@ Prvi pokušaj s JDK-om 25 nije uspio zbog nepodržane class verzije 69. Ponovlje
 
 ## Ovisnosti i pom.xml
 
-Postojeći nalazi i TODO komentari ostaju povezani s [OSV analizom](../prije/osv-detailed.md), [pregledom ovisnosti](../prije/ovisnosti-todo.md) i [prijedlogom nadogradnje](../prije/prijedlog-nadogradnje.md). Stvarne verzije ostaju Spring Boot **3.5.7** i eksplicitni SnakeYAML **1.33**.
+Postojeći nalazi i TODO komentari ostaju povezani s [OSV analizom](prije/osv-detailed.md), [pregledom ovisnosti](prije/ovisnosti-todo.md) i [prijedlogom nadogradnje](prije/prijedlog-nadogradnje.md). Stvarne verzije ostaju Spring Boot **3.5.7** i eksplicitni SnakeYAML **1.33**.
 
 Posebno ostaje rizik nesigurnog YAML učitavanja u `PostavkeController` (CVE-2022-1471): naknadna provjera rezultata kao `Map` ne sprječava konstrukciju objekata tijekom parsiranja. Raniji TODO predlaže sigurni konstruktor i podržanu verziju. Nadogradnja parenta sama ne uklanja eksplicitni SnakeYAML override. Prijedlozi verzija nalaze se u povezanom dokumentu; ovdje nije provedeno novo SCA skeniranje ni nadogradnja.
 

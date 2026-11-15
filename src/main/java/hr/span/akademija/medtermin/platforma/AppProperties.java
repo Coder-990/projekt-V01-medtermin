@@ -8,8 +8,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AppProperties(String naziv, String storageDir, String mailboxDir, Cors cors) {
 
     // TODO(sec): spotbugs EI_EXPOSE_REP [MALICIOUS_CODE; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.AppProperties$Cors.allowedOrigins() may expose internal representation by returning AppProperties$Cors.allowedOrigins
-    // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.platforma.AppProperties$Cors(List) may expose internal representation by storing an externally mutable object into AppProperties$Cors.allowedOrigins
     public record Cors(List<String> allowedOrigins) {
+        // M07: Obrambena kopija sprečava naknadnu izmjenu konfigurirane CORS liste.
+        public Cors { allowedOrigins = allowedOrigins == null ? null : List.copyOf(allowedOrigins); }
     }
 
     public List<String> dopusteniOrigini() {

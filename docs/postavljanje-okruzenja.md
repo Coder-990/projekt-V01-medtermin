@@ -1,29 +1,25 @@
-# Postavljanje okruženja – projekt V01
+# Postavljanje okruženja – MedTermin Java
 
-Raspakiraj ZIP u mapu bez razmaka i dijakritika u putanji (npr. `C:\projekti\V01` ili `~/projekti/V01`).
-Odaberi **jednu** tehnologiju: `java/`, `dotnet/` ili `python/`. Preporuka: odmah inicijaliziraj lokalni Git repozitorij
-(`git init`, prvi commit = izvorno stanje) – tako lako uspoređuješ promjene i pokazuješ popravke.
+## Trenutni rezultat testova
 
-## Java (mapa `java/`)
+`./mvnw clean test` izvršava 157 testova: 156 prolazi, a neizmijenjeni izvorni test za tuđi nalaz pada jer očekuje ranjivi HTTP 200 umjesto 404. Nakon tog pada pokreni `./mvnw jacoco:report` za izvještaj. Izvorna verzija ima 117 prolaznih testova; obje verzije imaju 100 % pokrivenosti Java linija i grana.
 
-| Alat | Verzija | Provjera |
-|---|---|---|
-| JDK | 21 (npr. Eclipse Temurin 21) | `java -version` |
-| Maven | nije potreban – projekt ima Maven Wrapper (`mvnw`, `mvnw.cmd`) | `./mvnw -v` |
-| IDE | IntelliJ IDEA (Community ili Ultimate) ili VS Code + *Extension Pack for Java* + *Spring Boot Extension Pack* + *REST Client* | |
 
-- **IntelliJ IDEA:** *File → Open…* → odaberi `java/pom.xml` → *Open as Project*. *Project Structure → SDK* = 21.
-  Pokretanje: klasa `…Application` → ▶. Testovi: desni klik na `src/test/java` → *Run 'All Tests'*.
-  Zahtjevi: otvori `http/medtermin.http` i klikni ▶ uz zahtjev.
-- **VS Code:** *File → Open Folder…* → `java/`. Testovi u *Testing* panelu, zahtjevi iz `http/medtermin.http` (REST Client).
-- **Naredbeni redak** (u mapi `java/`; na Windowsu `mvnw.cmd` umjesto `./mvnw`):
-  ```bash
-  ./mvnw spring-boot:run                 # aplikacija na http://localhost:8080
-  ./mvnw test                            # svi testovi + JaCoCo izvještaj (target/site/jacoco/index.html)
-  ./mvnw test -Dgroups=funkcionalno      # samo funkcionalni testovi
-  ./mvnw test -Dtest=NazivMojegTesta     # jedan test
-  ```
-  Na macOS/Linuxu, ako `./mvnw` javi *Permission denied*: `chmod +x mvnw`.
+Ovaj repozitorij ima Maven projekt u korijenskoj mapi. Potrebni su JDK 21 i mrežni pristup za prvo preuzimanje ovisnosti; Maven Wrapper je uključen.
+
+```bash
+./mvnw -v
+./mvnw clean verify
+APP_COOKIE_SECURE=false ./mvnw spring-boot:run
+```
+
+Aplikacija zadano sluša samo `127.0.0.1:8080`. Početni računi s poznatim lozinkama stvaraju se automatski. Gornja naredba isključuje Secure kolačić jer lokalno nema HTTPS-a. Nikada ne koristiti te postavke za stvarne podatke. Za provjeru: `GET http://localhost:8080/api/health` i prijava `ana` prema README-u.
+
+Svi testovi izvode se s `./mvnw clean verify`, a JaCoCo HTML izvještaj nastaje u `target/site/jacoco/index.html`. Testovi zahtijevaju dopuštenje za lokalni socket i koriste privremene mape. Python alati za izvještaje trebaju `python3 -m pip install -r requirements-security-tools.txt`.
+
+Lokalna pošta sprema reset tokene u privatnu POSIX mapu; javno dostupna ili simbolička mapa se odbija. Dohvat nalaza zahtijeva datotečni sustav koji podržava `SecureDirectoryStream`. Ako sustav to ne podržava, zahtjev se sigurno odbija. Aplikacija koristi H2 u memoriji i simuliranu poštu te **nije spremna za produkciju**. Detalji, CSRF, ograničenja po IP adresi, proxy i potrebna produkcijska infrastruktura nalaze se u [pregledu provjera](../alati/poslije/README.md).
+
+Sljedeći odjeljci o .NET-u i Pythonu zadržani su kao povijesni predložak; ti projekti nisu dio ovog repozitorija.
 
 ## .NET (mapa `dotnet/`)
 
@@ -75,7 +71,7 @@ pip install -r requirements-dev.txt
   ```
   Na Windowsu, ako PowerShell ne dopušta aktivaciju: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-## Provjera da sve radi
+## Povijesne opće upute
 
 1. `GET http://localhost:<port>/api/health` → `{"status":"UP"}`
 2. Prijava kao `ana` (vidi README) → dobiješ token.

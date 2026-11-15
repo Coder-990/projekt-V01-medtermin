@@ -34,7 +34,6 @@ public class UvozTermina {
         try {
             DocumentBuilder builder = tvornica().newDocumentBuilder();
             builder.setErrorHandler(new DefaultHandler());
-            // TODO(sec): T01 [FindSecBugs XXE_DOCUMENT; provjera]: Tvornica vec zabranjuje DOCTYPE i vanjske entitete; nije potvrdjena XXE ranjivost. Sacuvati zastite i provjeriti regresijskim testom. Izvor/detalji: alati/poslije/pregled-koda.md.
             dokument = builder.parse(new ByteArrayInputStream(xml));
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw ApiException.neispravno("Neispravan XML.");
@@ -59,6 +58,9 @@ public class UvozTermina {
     private static DocumentBuilderFactory tvornica() throws ParserConfigurationException {
         DocumentBuilderFactory tvornica = DocumentBuilderFactory.newInstance();
         tvornica.setNamespaceAware(true);
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): T01 [FindSecBugs XXE_DOCUMENT; provjera]: Tvornica vec zabranjuje DOCTYPE i vanjske entitete; nije potvrdjena XXE ranjivost. Sacuvati zastite i provjeriti regresijskim testom. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // T01: Zabrana DOCTYPE-a i vanjskih entiteta štiti XML uvoz od XXE napada.
         tvornica.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         tvornica.setFeature("http://xml.org/sax/features/external-general-entities", false);
         tvornica.setFeature("http://xml.org/sax/features/external-parameter-entities", false);

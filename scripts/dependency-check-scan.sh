@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# OWASP Dependency-Check nad jar datotekama iz Maven projekta, rezultat u alati/prije/
+# OWASP Dependency-Check nad jar datotekama iz Maven projekta, rezultat u alati/poslije/
+set -euo pipefail
 cd "$(dirname "$0")" || exit 1
 
-OUT=alati/prije
+OUT=alati/poslije
 DATA="$HOME/.dependency-check-data"
 mkdir -p "$OUT" "$DATA" target/dependency
 
@@ -24,6 +25,7 @@ docker run --rm \
   --scan /src/target/dependency \
   --project medtermin \
   --format HTML --format JSON \
+  --suppression /src/dependency-check-suppressions.xml \
   "${KEY_ARG[@]}" \
   -l "/src/$OUT/dependency-check.log" \
   --out "/src/$OUT"

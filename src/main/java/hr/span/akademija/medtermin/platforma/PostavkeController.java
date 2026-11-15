@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -31,7 +33,6 @@ public class PostavkeController {
     private final JdbcTemplate jdbc;
 
     public PostavkeController(JdbcTemplate jdbc) {
-        // TODO(sec): spotbugs EI_EXPOSE_REP2 [MALICIOUS_CODE; provjeriti nalaz]: new hr.span.akademija.medtermin.platforma.PostavkeController(JdbcTemplate) may expose internal representation by storing an externally mutable object into PostavkeController.jdbc
         this.jdbc = jdbc;
     }
 
@@ -46,19 +47,37 @@ public class PostavkeController {
 
     @PostMapping
     public Map<String, Object> spremi(@RequestBody byte[] tijelo, PrijavljeniKorisnik korisnik) {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): OSV/Trivy/Dependency-Check CVE-2022-1471: nepouzdan YAML ulazi u new Yaml().load;
+        // predloziti SafeConstructor i podrzanu verziju; provjera Map nakon load ne sprjecava nuspojave.
+        // Plan, korak 5 / CVE-2022-1471: Prijašnji new Yaml().load mogao je obraditi
+        // objektni tag prije nego što bi naknadna provjera ustanovila je li rezultat Map.
+        // SafeConstructor prihvaća podatkovne tipove bez proizvoljne konstrukcije Java
+        // objekata; veličina, dubina, aliasi i duplikati ograničavaju složenost ulaza.
+        // Nakon parsiranja dodatno provjeravamo poznate ključeve i tipove vrijednosti.
+        if (tijelo.length > 16_384) throw ApiException.neispravno("Prevelik YAML.");
         Object dokument;
         try {
-            // TODO(sec): OSV/Trivy/Dependency-Check CVE-2022-1471: nepouzdan YAML ulazi u new Yaml().load;
-            // predloziti SafeConstructor i podrzanu verziju; provjera Map nakon load ne sprjecava nuspojave.
-            dokument = new Yaml().load(new ByteArrayInputStream(tijelo));
+            LoaderOptions options = new LoaderOptions();
+            options.setMaxAliasesForCollections(0);
+            options.setNestingDepthLimit(5);
+            options.setCodePointLimit(16_384);
+            options.setAllowDuplicateKeys(false);
+            dokument = new Yaml(new SafeConstructor(options)).load(new ByteArrayInputStream(tijelo));
         } catch (YAMLException e) {
             throw ApiException.neispravno("Neispravan YAML.");
         }
         if (!(dokument instanceof Map<?, ?> mapa)) {
             throw ApiException.neispravno("Neispravne postavke.");
         }
+        // Korak 5: Odbijamo nepoznate ključeve kako bismo spremili samo očekivanu strukturu.
+        if (!mapa.keySet().stream().allMatch(k -> k instanceof String && Set.of("podsjetnik", "satiPrije", "kanal").contains(k))) {
+            throw ApiException.neispravno("Neispravne postavke.");
+        }
         boolean podsjetnik = vrijednost(mapa, "podsjetnik", Boolean.class, Boolean.TRUE);
-        int satiPrije = vrijednost(mapa, "satiPrije", Number.class, 24).intValue();
+        // Samo cijeli broj u rasponu dopuštenih sati: intValue() na Long/Double
+        // mogao bi prešutno odrezati decimalu ili prepuniti broj i promijeniti vrijednost.
+        int satiPrije = vrijednost(mapa, "satiPrije", Integer.class, 24);
         String kanal = vrijednost(mapa, "kanal", String.class, "email");
         if (satiPrije < 1 || satiPrije > 168 || !KANALI.contains(kanal)) {
             throw ApiException.neispravno("Neispravne postavke.");

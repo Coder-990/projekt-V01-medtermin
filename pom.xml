@@ -13,7 +13,12 @@
         <!-- TODO(sec): dependency-review: prijedlog Boot 4.1.2 (stabilna verzija provjerena 2026-11-13),
              bez primjene. Uskladiti startere, Jackson i testove prema migracijskim uputama;
              vidi alati/prije/prijedlog-nadogradnje.md. -->
-        <version>3.5.7</version>
+        <!-- Povijesni TODO iznad: parent 3.5.7 je ažuriran na 4.1.2. Novi BOM
+             usklađuje Spring 6.2.12 -> 7.0.10, Tomcat 10.1.48 -> 11.0.27,
+             Logback 1.5.20 -> 1.5.38 i Jackson 2.19.2 -> 3.1.7. Lokalni Trivy
+             više ne prijavljuje 59 nalaza iz starog SBOM-a; pojedinačni CVE-ovi i
+             ograničenja usporedbe navedeni su u alati/poslije/2026-11-15-boot4/status.md. -->
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
 
@@ -25,11 +30,16 @@
 
     <properties>
         <java.version>21</java.version>
-        <jacoco.version>0.8.13</jacoco.version>
+        <!-- JaCoCo 0.8.13 -> 0.8.16: ažuriran alat za mjerenje pokrivenosti i podrška za novije JDK-ove. -->
+        <jacoco.version>0.8.16</jacoco.version>
+        <!-- Boot 4.1.2 BOM: SnakeYAML 2.6 -> 2.7 i H2 2.4.240 -> 2.5.252;
+             verzije su usklađene na razini cijelog BOM-a, bez promjene pojedinačnih JAR-ova. -->
+        <snakeyaml.version>2.7</snakeyaml.version>
+        <h2.version>2.5.252</h2.version>
         <!-- TODO(sec): dependency-review: OSV/Trivy/Dependency-Check CVE-2022-1471;
              ovaj override zadrzava SnakeYAML 1.33 i nakon promjene Boot parenta.
              Predloziti uklanjanje overridea i sigurnu obradu YAML-a; zasad ne mijenjati. -->
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <!-- Povijesni komentar iznad odnosi se na uklonjeni override 1.33; sada je odabran 2.7. -->
     </properties>
 
     <dependencies>
@@ -37,7 +47,10 @@
              njihove verzije uskladjuje Boot parent, bez zasebnih overridea pojedinacnih JAR-ova. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <!-- Boot 4: spring-boot-starter-web zamijenjen je starterom webmvc;
+                 on dovodi usklađeni Spring MVC i Jackson 3, pa aplikacija zadržava REST API.
+                 Stari Jackson 2.19.2 imao je više nalaza u izvornom Trivy SBOM izvještaju. -->
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -52,23 +65,47 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Samo kriptografski dio Spring Securityja, bez web filtera. -->
-        <!-- TODO(sec): dependency-review: Dependency-Check/CVE-2018-1258 provjeriti prema stvarnom modulu/verziji; LozinkaHasher trenutačno ne koristi spring-security-crypto. -->
+        <!-- Samo kriptografski dio Spring Securityja, bez web filtera.
+             BOM nakon prelaska na Boot 4 upravlja verzijom 7.1.2 umjesto 6.5.6;
+             prijava i migracija lozinki provjerene su postojećim testovima. -->
+        <!-- TODO(sec): pri promjeni Spring ovisnosti ponovno provjeriti CVE-2018-1258 i
+             ukloniti/obnoviti usko isključenje u dependency-check-suppressions.xml.
+             Prijava je lažno pozitivna: Spring Framework 7.0.10 nije ranjivi 5.0.5;
+             crypto modul ovdje pruža BCrypt, a ne autorizaciju metoda. -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
+        <!-- Plan, korak 5 / CVE-2022-1471: uklonjen je ranjivi override 1.33,
+             a BOM-ova verzija 2.6 nadjačana je na 2.7. PostavkeController koristi
+             SafeConstructor kako nepouzdani YAML ne bi stvarao proizvoljne objekte. -->
         <!-- Čitanje korisničkih postavki u YAML formatu. -->
         <!-- TODO(sec): dependency-review: SnakeYAML/CVE-2022-1471 iz sva tri SCA izvjestaja povezan je s PostavkeController.spremi; vidi override i TODO uz load. -->
+        <!-- TODO(sec): dependency-review: ponoviti SCA provjeru SnakeYAML-a nakon nadogradnje i promjene parsera. -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
 
+        <!-- Jackson 2 koristi samo izvorni testni HTTP klijent; aplikacija koristi Jackson 3.
+             OSV: 2.22.3 ispravlja sedam nalaza prijavljenih za 2.22.1; ponoviti OSV sken. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.22.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.22.3</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <!-- TODO(sec): dependency-review: Dependency-Check/CVE-2026-24400; AssertJ 3.27.6 dolazi testnim starterom. Predloziti 3.27.7 ili uskladeni Boot BOM, bez primjene. -->
+            <!-- Povijesni komentar iznad: Boot 4.1.2 BOM sada upravlja verzijom 3.27.7 u testovima. -->
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -82,12 +119,17 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.8.6.6</version>
+                <!-- Alat za statičku analizu: 4.8.6.6 -> 4.10.5.0. -->
+                <version>4.10.5.0</version>
+                <configuration>
+                    <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>com.h3xstream.findsecbugs</groupId>
                         <artifactId>findsecbugs-plugin</artifactId>
-                        <version>1.13.0</version>
+                        <!-- Pravila za sigurnosnu analizu: 1.13.0 -> 1.14.0. -->
+                        <version>1.14.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -133,7 +175,7 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
-                        <version>4.8.6.6</version>
+                        <version>4.10.5.0</version>
                         <configuration>
                             <effort>Max</effort>
                             <threshold>Low</threshold>
@@ -141,7 +183,7 @@
                                 <plugin>
                                     <groupId>com.h3xstream.findsecbugs</groupId>
                                     <artifactId>findsecbugs-plugin</artifactId>
-                                    <version>1.13.0</version>
+                                    <version>1.14.0</version>
                                 </plugin>
                             </plugins>
                         </configuration>
@@ -159,9 +201,12 @@
                     <plugin>
                         <groupId>org.cyclonedx</groupId>
                         <artifactId>cyclonedx-maven-plugin</artifactId>
-                        <version>2.9.1</version>
+                        <!-- Generator SBOM-a: 2.9.1 -> 2.9.3. -->
+                        <version>2.9.3</version>
                         <!-- TODO(sec): dependency-review: SBOM ne ukljucuje testne ovisnosti koje DC skenira;
                              predloziti includeTestScope=true za usporediv obuhvat, zasad bez promjene konfiguracije. -->
+                        <!-- Povijesni TODO iznad: testne ovisnosti sada se uključuju i u redovni SBOM. -->
+                        <configuration><includeTestScope>true</includeTestScope></configuration>
                     </plugin>
                 </plugins>
             </build>
