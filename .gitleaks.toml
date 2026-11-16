@@ -1,0 +1,10 @@
+# gitleaks: zadana pravila + iznimke za ovaj repozitorij.
+# Pojedinačni lažno pozitivni nalazi: otisak (Fingerprint) iz izvještaja upišite u .gitleaksignore.
+title = "devsecops"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generirani izvještaji i alati"
+paths = ['''^izvjestaji/''', '''^\.ci-alati/''']

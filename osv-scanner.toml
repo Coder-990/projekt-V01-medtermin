@@ -1,0 +1,7 @@
+# OSV-Scanner: prihvaćene ranjivosti ovisnosti (uvijek s razlogom i rokom!).
+# Bolje: ažurirati ovisnost (Dependabot otvara PR). Iznimka je privremena odluka, ne rješenje.
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2026-12-31
+# reason = "Ranjiva funkcija se ne koristi; nadogradnja čeka Spring Boot 3.5.x"

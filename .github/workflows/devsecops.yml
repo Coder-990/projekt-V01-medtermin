@@ -1,0 +1,141 @@
+name: devsecops
+# Sigurnosni cjevovod (Secure Coding akademija, Tjedan 3).
+# Logika je u ci/*.sh (može se pokrenuti i lokalno); ovdje su samo poslovi i artefakti.
+# Odluku o prolazu donosi ISKLJUČIVO posao "gate" (ci/gate.py) – vidi README.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'   # tjedno: nove ranjivosti u ovisnostima koje se nisu mijenjale
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsecops-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  build:
+    name: Build, testovi, pokrivenost
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
+      - run: bash ci/build-test.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: izvjestaj-build, path: izvjestaji/, if-no-files-found: warn }
+
+  sast:
+    name: SAST (Semgrep, SpotBugs + FindSecBugs)
+    runs-on: ubuntu-latest
+    permissions: { contents: read, security-events: write, actions: read }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: bash ci/sast.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: izvjestaj-sast, path: izvjestaji/, if-no-files-found: warn }
+      # Code scanning radi samo u javnim repozitorijima ili uz GitHub Advanced Security -> best effort.
+      - name: Code scanning – Semgrep (ako je dostupno)
+        if: always() && hashFiles('izvjestaji/semgrep.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with: { sarif_file: izvjestaji/semgrep.sarif, category: semgrep }
+      - name: Code scanning – SpotBugs (ako je dostupno)
+        if: always() && hashFiles('izvjestaji/spotbugs.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with: { sarif_file: izvjestaji/spotbugs.sarif, category: spotbugs }
+
+  sca:
+    name: SCA (SBOM, OSV-Scanner)
+    runs-on: ubuntu-latest
+    permissions: { contents: read, security-events: write, actions: read }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
+      - run: bash ci/sca.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: izvjestaj-sca, path: izvjestaji/, if-no-files-found: warn }
+      - name: Code scanning – OSV (ako je dostupno)
+        if: always() && hashFiles('izvjestaji/osv.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with: { sarif_file: izvjestaji/osv.sarif, category: osv-scanner }
+
+  dependency-review:
+    name: Pregled ovisnosti u PR-u
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    # Privatni repozitorij bez GitHub Advanced Security ne podržava dependency review -> best effort.
+    continue-on-error: true
+    permissions: { contents: read, pull-requests: write }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/dependency-review-action@v4
+        with: { fail-on-severity: high, comment-summary-in-pr: on-failure }
+
+  secrets:
+    name: Tajne (gitleaks)
+    runs-on: ubuntu-latest
+    permissions: { contents: read, security-events: write, actions: read }
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }   # cijela povijest: i obrisana tajna je procurila
+      - run: bash ci/secrets.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: izvjestaj-tajne, path: izvjestaji/, if-no-files-found: warn }
+      - name: Code scanning – gitleaks (ako je dostupno)
+        if: always() && hashFiles('izvjestaji/gitleaks.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with: { sarif_file: izvjestaji/gitleaks.sarif, category: gitleaks }
+
+  dast:
+    name: DAST (OWASP ZAP baseline)
+    runs-on: ubuntu-latest
+    env:
+      # Testni korisnik (seed iz T2). Lozinka iz GitHub secreta DAST_LOZINKA; ako ga nema, seed lozinka.
+      DAST_KORISNIK: ana
+      DAST_LOZINKA: ${{ secrets.DAST_LOZINKA }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
+      - run: bash ci/dast.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: izvjestaj-dast, path: izvjestaji/, if-no-files-found: warn }
+
+  gate:
+    name: Sigurnosna vrata
+    needs: [build, sast, sca, secrets, dast]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v6
+        with: { pattern: izvjestaj-*, path: izvjestaji, merge-multiple: true }
+      - name: Odluka (ci/gate.py)
+        env:
+          REZULTATI_POSLOVA: ${{ toJSON(needs) }}
+        run: python3 ci/gate.py
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with: { name: sigurnosna-vrata, path: izvjestaji/gate.json, if-no-files-found: warn }

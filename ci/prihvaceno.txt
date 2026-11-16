@@ -1,0 +1,18 @@
+# Prihvaćeni nalazi (iznimke za sigurnosna vrata) – čita ih ci/gate.py.
+#
+# Format (5 polja odvojenih s |, obrazloženje je OBAVEZNO):
+#   alat | pravilo | datoteka | odsječak koda | obrazloženje
+#
+#   alat      semgrep, spotbugs, roslyn, osv, nuget, gitleaks, zap (ili *)
+#   pravilo   ID pravila; uzorak kao u ljusci (*). Za Semgrep dovoljan je zadnji dio ID-a.
+#   datoteka  uzorak putanje (bez / = samo ime datoteke); za osv/nuget "paket@verzija", za zap putanja URL-a
+#   odsječak  (neobavezno) tekst koji mora biti u redcima nalaza – iznimka tada vrijedi samo za TAJ kod,
+#             pa se ponovno uveden propust na drugom mjestu (ili drukčijim kodom) i dalje blokira.
+#             Ne smije sadržavati znak |.
+#
+# Pravilo: što uže iznimke (pravilo + datoteka + odsječak), uvijek s razlogom; preispitajte ih pri svakoj promjeni.
+# Primjer (Semgrep javlja ORDER BY sastavljen iz mape dopuštenih stupaca kao moguću SQL injekciju):
+# semgrep | tainted-sql-string | LijecnikController.java | stupac + " " + redoslijed | stupac i smjer dolaze iz mape dopuštenih vrijednosti
+
+# --- Zajednička platforma T2 projekata (vrijedi za sve domene) ---
+spotbugs | SQL_INJECTION_JDBC | JdbcPomoc.java | | umetni() prima SQL od pozivatelja (prepareStatement + parametri); stvarni SQL na mjestima poziva provjeravaju Semgrep i SpotBugs

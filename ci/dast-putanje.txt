@@ -1,0 +1,12 @@
+# Putanje koje ZAP posjećuje s tokenom testnog korisnika (API nema poveznica koje bi spider pratio).
+# Jedna putanja po retku; dodajte putanje svoje domene (samo GET, bez brisanja podataka!).
+/api/health
+/api/ja
+/prijava?returnUrl=/
+# MedTermin (prilagodite domeni):
+/api/lijecnici?sort=prezime&smjer=asc
+/api/rezervacije/moje
+/api/nalazi/moji
+/ispis/rezervacije/1
+# Ulaznica:   /api/dogadjaji   /api/narudzbe/moje   /api/racuni/moji   /ispis/narudzbe/1
+# Kadrovska:  /api/zaposlenici /api/zahtjevi/moji   /api/platne-liste/moje /ispis/zahtjevi/1

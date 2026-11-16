@@ -1,0 +1,262 @@
+# Vlastita Semgrep pravila projekta: "regresijski" čuvari za propuste koje smo već jednom popravili.
+# Pravila iz registra (p/owasp-top-ten, p/java, p/csharp, p/python) su općenita i neke obrasce ne prepoznaju
+# (npr. tvornica XML parsera u zasebnoj metodi, ulančani new Yaml().load(...), brzi hash lozinke, vlastita
+# provjera origina). Ova pravila su namjerno uska i visoke pouzdanosti – svaki nalaz blokira (severity ERROR).
+rules:
+  # ---------------- Java ----------------
+  - id: java-xxe-documentbuilderfactory-bez-zabrane-doctype
+    languages: [java]
+    severity: ERROR
+    message: >-
+      DocumentBuilderFactory bez setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+      u istoj metodi – parser razrješava vanjske entitete (XXE). Zabranite DOCTYPE odmah nakon newInstance().
+    metadata: { cwe: "CWE-611", owasp: "A02:2025", confidence: HIGH, category: security }
+    patterns:
+      - pattern-inside: |
+          $T $M(...) { ... }
+      - pattern: $F = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+      - pattern-not-inside: |
+          $F = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+          ...
+          $F.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+  - id: java-snakeyaml-bez-safeconstructor
+    languages: [java]
+    severity: ERROR
+    message: >-
+      new Yaml() bez SafeConstructor deserijalizira proizvoljne Java tipove (CWE-502).
+      Koristite new Yaml(new SafeConstructor(new LoaderOptions())).
+    metadata: { cwe: "CWE-502", owasp: "A08:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: new org.yaml.snakeyaml.Yaml()
+      - pattern: new org.yaml.snakeyaml.Yaml(new org.yaml.snakeyaml.constructor.Constructor(...), ...)
+  - id: java-slab-hash-za-tokene-ili-lozinke
+    languages: [java]
+    severity: ERROR
+    message: >-
+      MD5/SHA-1 nisu prikladni za tokene ni lozinke. Tokeni: SecureRandom (32 bajta);
+      lozinke: PasswordEncoder (Argon2/bcrypt).
+    metadata: { cwe: "CWE-328", owasp: "A04:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: $X("MD5", ...)
+      - pattern: $O.$X("MD5", ...)
+      - pattern: java.security.MessageDigest.getInstance("SHA-1")
+  # ---------------- C# ----------------
+  - id: csharp-xxe-dtdprocessing-parse
+    languages: [csharp]
+    severity: ERROR
+    message: >-
+      DtdProcessing.Parse / XmlUrlResolver omogućuju vanjske entitete (XXE).
+      Koristite DtdProcessing.Prohibit i XmlResolver = null.
+    metadata: { cwe: "CWE-611", owasp: "A02:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: DtdProcessing.Parse
+      - pattern: new XmlUrlResolver()
+  - id: csharp-cors-bilo-koji-origin
+    languages: [csharp]
+    severity: ERROR
+    message: >-
+      CORS politika dopušta bilo koji origin (uz vjerodajnice to je krađa podataka s druge stranice).
+      Navedite origine iz konfiguracije: WithOrigins(...).
+    metadata: { cwe: "CWE-942", owasp: "A02:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: $P.SetIsOriginAllowed($X => true)
+      - pattern: $P.AllowAnyOrigin().$Y(...).AllowCredentials()
+  - id: csharp-md5-sha1
+    languages: [csharp]
+    severity: ERROR
+    message: MD5/SHA-1 nisu prikladni za tokene ni lozinke (RandomNumberGenerator / PasswordHasher<T>).
+    metadata: { cwe: "CWE-328", owasp: "A04:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: MD5.HashData(...)
+      - pattern: MD5.Create()
+      - pattern: SHA1.HashData(...)
+      - pattern: SHA1.Create()
+  # ---------------- Python ----------------
+  - id: python-xxe-lxml-razrjesavanje-entiteta
+    languages: [python]
+    severity: ERROR
+    message: >-
+      lxml XMLParser s resolve_entities=True ili load_dtd=True razrješava vanjske entitete i učitava DTD (XXE).
+      Koristite XMLParser(resolve_entities=False, load_dtd=False, no_network=True) i odbijte DOCTYPE (ili defusedxml).
+    metadata: { cwe: "CWE-611", owasp: "A02:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - pattern: lxml.etree.XMLParser(..., resolve_entities=True, ...)
+      - pattern: lxml.etree.XMLParser(..., load_dtd=True, ...)
+      - pattern: lxml.etree.XMLParser(..., dtd_validation=True, ...)
+  - id: python-yaml-load-bez-safeloader
+    languages: [python]
+    severity: ERROR
+    message: >-
+      yaml.load / full_load / unsafe_load bez SafeLoadera mogu stvarati proizvoljne Python objekte (CWE-502).
+      Koristite yaml.safe_load(...).
+    metadata: { cwe: "CWE-502", owasp: "A08:2025", confidence: HIGH, category: security }
+    patterns:
+      - pattern-either:
+          - pattern: yaml.load(...)
+          - pattern: yaml.load_all(...)
+          - pattern: yaml.full_load(...)
+          - pattern: yaml.full_load_all(...)
+          - pattern: yaml.unsafe_load(...)
+          - pattern: yaml.unsafe_load_all(...)
+      - pattern-not: yaml.$L($X, Loader=yaml.SafeLoader)
+      - pattern-not: yaml.$L($X, Loader=yaml.CSafeLoader)
+      - pattern-not: yaml.$L($X, yaml.SafeLoader)
+      - pattern-not: yaml.$L($X, yaml.CSafeLoader)
+  - id: python-slab-hash-za-tokene-ili-lozinke
+    languages: [python]
+    severity: ERROR
+    message: >-
+      MD5/SHA-1 nisu prikladni za tokene ni lozinke, a brzi hash (SHA-2) lozinke bez soli i faktora rada
+      lako se razbija. Tokeni: secrets.token_urlsafe(32); lozinke: argon2-cffi / pwdlib (Argon2id) ili bcrypt.
+    metadata: { cwe: "CWE-328", owasp: "A04:2025", confidence: HIGH, category: security }
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: hashlib.md5(...)
+              - pattern: hashlib.sha1(...)
+              - pattern: hashlib.new("md5", ...)
+              - pattern: hashlib.new("sha1", ...)
+          - pattern-not: hashlib.$H(..., usedforsecurity=False, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: hashlib.$H($L.encode(...), ...)
+              - pattern: hashlib.$H($L, ...)
+          - metavariable-regex:
+              metavariable: $H
+              regex: ^(sha224|sha256|sha384|sha512|sha3_\w+|blake2[bs])$
+          - metavariable-regex:
+              metavariable: $L
+              regex: (?i)^\w*(lozink|password|passwd|pwd)\w*$
+  - id: python-preusmjeravanje-bez-provjere-adrese
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Adresa za preusmjeravanje (returnUrl/next) vraća se ili koristi bez provjere da je lokalni put (CWE-601).
+      Dopustite samo put koji počinje jednim "/" (ne "//", bez "\" i sheme); inače "/".
+    metadata: { cwe: "CWE-601", owasp: "A01:2025", confidence: HIGH, category: security }
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern-inside: |
+                  def $F(..., $U, ...):
+                    ...
+              - pattern: return $U
+          - patterns:
+              - pattern-inside: |
+                  def $F(..., $U, ...):
+                    ...
+              - pattern-either:
+                  - pattern: starlette.responses.RedirectResponse($U, ...)
+                  - pattern: starlette.responses.RedirectResponse(..., url=$U, ...)
+                  - pattern: fastapi.responses.RedirectResponse($U, ...)
+                  - pattern: fastapi.responses.RedirectResponse(..., url=$U, ...)
+      - metavariable-regex:
+          metavariable: $U
+          regex: (?i)^(return_?url|next|next_?url|redirect_?(url|to)?|povratn\w*)$
+      - pattern-not-inside: |
+          def $F(..., $U, ...):
+            ...
+            $V = <... $U.startswith(...) ...>
+            ...
+      - pattern-not-inside: |
+          def $F(..., $U, ...):
+            ...
+            if <... $U.startswith(...) ...>:
+              ...
+            ...
+      - pattern-not-inside: |
+          def $F(..., $U, ...):
+            ...
+            $V = <... urllib.parse.urlsplit($U) ...>
+            ...
+      - pattern-not-inside: |
+          def $F(..., $U, ...):
+            ...
+            $V = <... urllib.parse.urlparse($U) ...>
+            ...
+  - id: python-cors-bilo-koji-origin
+    languages: [python]
+    severity: ERROR
+    message: >-
+      CORS dopušta bilo koji origin uz vjerodajnice (refleksija Origin zaglavlja) – druga stranica može čitati
+      odgovore u ime prijavljenog korisnika (CWE-942). Dopustite samo origine s popisa iz konfiguracije.
+    metadata: { cwe: "CWE-942", owasp: "A02:2025", confidence: HIGH, category: security }
+    pattern-either:
+      # Starlette uz "*" i allow_credentials=True vraća upravo Origin iz zahtjeva
+      - pattern: $APP.add_middleware(starlette.middleware.cors.CORSMiddleware, ..., allow_origins=["*"], ..., allow_credentials=True, ...)
+      - pattern: $APP.add_middleware(starlette.middleware.cors.CORSMiddleware, ..., allow_credentials=True, ..., allow_origins=["*"], ...)
+      - pattern: $APP.add_middleware(fastapi.middleware.cors.CORSMiddleware, ..., allow_origins=["*"], ..., allow_credentials=True, ...)
+      - pattern: $APP.add_middleware(fastapi.middleware.cors.CORSMiddleware, ..., allow_credentials=True, ..., allow_origins=["*"], ...)
+      - patterns:
+          - pattern-either:
+              - pattern: $APP.add_middleware(starlette.middleware.cors.CORSMiddleware, ..., allow_origin_regex=$R, ...)
+              - pattern: $APP.add_middleware(fastapi.middleware.cors.CORSMiddleware, ..., allow_origin_regex=$R, ...)
+          - metavariable-regex:
+              metavariable: $R
+              regex: ^[rf]?["'](\^?(https?(\?|\[s\]\?)?:\/\/)?\.[*+]\$?)["']$
+      # vlastita provjera origina koja ne traži origin u popisu dopuštenih
+      - patterns:
+          - pattern-inside: |
+              class $C(...):
+                ...
+          - pattern: |
+              def $F(self, $O, ...):
+                return $E
+          - metavariable-regex:
+              metavariable: $F
+              regex: (?i)^_*\w*(dopust|allow|origin)\w*$
+          - metavariable-regex:
+              metavariable: $O
+              regex: (?i)^\w*origin\w*$
+          - metavariable-pattern:
+              metavariable: $E
+              patterns:
+                - pattern-not: $O in $POPIS
+                - pattern-not: $POPIS.__contains__($O)
+  - id: python-sql-order-by-iz-parametra
+    languages: [python]
+    severity: ERROR
+    message: >-
+      ORDER BY je sastavljen iz parametra zahtjeva (SQL injekcija, CWE-89). Nazivi stupaca ne mogu biti
+      parametri upita (?) – stupac i smjer uzmite iz rječnika dopuštenih vrijednosti, inače 400.
+    metadata: { cwe: "CWE-89", owasp: "A05:2025", confidence: HIGH, category: security }
+    patterns:
+      - pattern-inside: |
+          def $F(..., $P, ...):
+            ...
+      - pattern-either:
+          - pattern: f"...{$P}..."
+          - pattern: '"..." + $P'
+          - pattern: '"...".format(..., $P, ...)'
+          - pattern: '"..." % $P'
+      - pattern-regex: (?i)ORDER\s+BY
+  - id: python-putanja-iz-parametra-bez-provjere
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Putanja datoteke sastavljena je izravno iz parametra zahtjeva bez provjere da ostaje unutar mape
+      (CWE-22). Datoteku potražite po ID-u/vlasniku u bazi i provjerite Path.resolve().is_relative_to(korijen).
+    metadata: { cwe: "CWE-22", owasp: "A01:2025", confidence: HIGH, category: security }
+    patterns:
+      - pattern-inside: |
+          def $F(..., $P, ...):
+            ...
+      - pattern-either:
+          - pattern: $BAZA / $P
+          - pattern: os.path.join(..., $P, ...)
+          - pattern: pathlib.Path(..., $P, ...)
+      - metavariable-regex:
+          metavariable: $P
+          regex: (?i)^\w*(datotek|file|path|putanj)\w*$
+      - pattern-not-inside: |
+          def $F(..., $P, ...):
+            ...
+            if <... $X.is_relative_to(...) ...>:
+              ...
+            ...
+      - pattern-not-inside: |
+          def $F(..., $P, ...):
+            ...
+            if <... os.path.commonpath(...) ...>:
+              ...
+            ...

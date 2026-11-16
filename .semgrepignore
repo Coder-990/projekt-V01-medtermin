@@ -1,0 +1,9 @@
+# Što Semgrep NE analizira (zamjenjuje Semgrepov zadani popis).
+src/test/
+tests/
+target/
+bin/
+obj/
+izvjestaji/
+.ci-alati/
+http/

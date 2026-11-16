@@ -1,0 +1,20 @@
+# Dependabot: tjedni PR-ovi za ažuriranje ovisnosti i verzija GitHub Actionsa.
+# (Sigurnosna ažuriranja – "Dependabot security updates" – uključuju se u Settings → Code security.)
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3   # nove verzije tek nakon 3 dana (zaštita od kompromitiranih izdanja)
+    open-pull-requests-limit: 5
+    groups:
+      spring-boot:
+        patterns: ["org.springframework.boot:*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3   # nove verzije tek nakon 3 dana (zaštita od kompromitiranih izdanja)
