@@ -1,0 +1,74 @@
+### MedTermin — primjeri za usmenu obranu (IntelliJ HTTP Client)
+# Pokreni aplikaciju lokalno i klikni zahtjev "Prijava Ane".
+# Token se sprema automatski u IntelliJ HTTP Client i vrijedi samo za pokrenutu aplikaciju.
+# Počni na 8081, zatim promijeni port na 8080 i ponovno pokreni prijavu.
+# Postupak pokretanja obje verzije: obrana/obrana-projekta.md.
+#prije popravka
+@host = http://localhost:8081
+#nakon popravka
+#@host = http://localhost:8080
+
+### 1. Prijava Ane — pokreni prije zahtjeva s {{anaToken}}
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username":"ana","password":"Ana12345!"}
+
+> {%
+    if (response.status === 200 && response.body.token) {
+        client.global.set("anaToken", response.body.token);
+        client.log("Anin token je spremljen za ovu instancu.");
+    } else {
+        client.global.clear("anaToken");
+        client.log("Prijava nije uspjela; provjeri aplikaciju i port.");
+    }
+%}
+
+### 2. Kontrola: Anin nalaz s nevaljanim formatom
+# Prije i poslije: HTTP 200 — Ana smije vidjeti svoj nalaz.
+GET {{host}}/api/nalazi/1?format=nevaljano
+Authorization: Bearer {{anaToken}}
+
+### 3. BOLA/IDOR: Ana traži Markov nalaz s nevaljanim formatom
+# Prije: HTTP 200 i Markovi podaci; poslije: HTTP 404 bez nalaza.
+GET {{host}}/api/nalazi/2?format=nevaljano
+Authorization: Bearer {{anaToken}}
+
+### 4. Kontrola: valjano sortiranje liječnika
+# Prije i poslije: HTTP 200 s popisom liječnika.
+GET {{host}}/api/lijecnici?sort=prezime&smjer=asc
+Authorization: Bearer {{anaToken}}
+
+### 5. SQL injekcija u sortiranju liječnika — bezopasan SQL izraz
+# Prije: HTTP 200 jer se SQL izraz izvršava; poslije: HTTP 400.
+# Izraz samo odabire stupac za sortiranje; ne mijenja podatke.
+GET {{host}}/api/lijecnici?sort=CASE%20WHEN%201%3D1%20THEN%20prezime%20ELSE%20ime%20END
+Authorization: Bearer {{anaToken}}
+
+### 6. CORS preflight s nepoznatim originom
+# Prije: HTTP 204 i Access-Control-Allow-Origin; poslije: HTTP 403.
+# Origin je samo vrijednost zaglavlja; zahtjev ide isključivo na {{host}}.
+OPTIONS {{host}}/api/ja
+Origin: https://nepoznat.example
+Access-Control-Request-Method: GET
+
+### 7. Prijava liječnika — pokreni prije zahtjeva s {{lijecnikToken}}
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username":"dr.horvat","password":"Ovlasteni12345!"}
+
+> {%
+    if (response.status === 200 && response.body.token) {
+        client.global.set("lijecnikToken", response.body.token);
+        client.log("Token liječnika je spremljen za ovu instancu.");
+    } else {
+        client.global.clear("lijecnikToken");
+        client.log("Prijava liječnika nije uspjela; provjeri aplikaciju i port.");
+    }
+%}
+
+### 8. Potvrda identiteta liječnika
+# Prije i poslije: HTTP 200, username dr.horvat i uloga LIJECNIK.
+GET {{host}}/api/ja
+Authorization: Bearer {{lijecnikToken}}

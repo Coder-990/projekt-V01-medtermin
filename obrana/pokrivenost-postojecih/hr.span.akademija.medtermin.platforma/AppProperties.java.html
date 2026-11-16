@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">AppProperties.java</span></div><h1>AppProperties.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/** Postavke aplikacije iz {@code application.properties} (prefiks {@code app}). */
+@ConfigurationProperties(prefix = &quot;app&quot;)
+<span class="fc" id="L8">public record AppProperties(String naziv, String storageDir, String mailboxDir, Cors cors) {</span>
+
+    // TODO(sec): spotbugs EI_EXPOSE_REP [MALICIOUS_CODE; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.AppProperties$Cors.allowedOrigins() may expose internal representation by returning AppProperties$Cors.allowedOrigins
+    public record Cors(List&lt;String&gt; allowedOrigins) {
+        // M07: Obrambena kopija sprečava naknadnu izmjenu konfigurirane CORS liste.
+<span class="pc bpc" id="L13" title="1 of 2 branches missed.">        public Cors { allowedOrigins = allowedOrigins == null ? null : List.copyOf(allowedOrigins); }</span>
+    }
+
+    public List&lt;String&gt; dopusteniOrigini() {
+<span class="pc bpc" id="L17" title="2 of 4 branches missed.">        if (cors == null || cors.allowedOrigins() == null) {</span>
+<span class="nc" id="L18">            return List.of();</span>
+        }
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        return cors.allowedOrigins().stream().map(String::trim).filter(o -&gt; !o.isEmpty()).toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

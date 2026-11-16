@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LozinkaHasher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">LozinkaHasher.java</span></div><h1>LozinkaHasher.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="fc" id="L11">public class LozinkaHasher {</span>
+    // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+    // TODO(sec): M05 [rucni pregled]: Brzi SHA-256 bez soli nije prikladan za lozinke; predlozeni Argon2id/BCrypt/PBKDF2 uz sol i migraciju postojecih hasheva. Izvor/detalji: alati/poslije/pregled-koda.md.
+    // M05: Raniji SHA-256 bio je brz i bez soli, što olakšava pogađanje pri curenju baze.
+    // BCrypt za svaki hash stvara sol i koristi faktor rada 12, pa dvije iste lozinke
+    // dobivaju različite zapise. Provjera stare SHA-256 vrijednosti ostaje radi migracije.
+<span class="fc" id="L17">    private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder(12);</span>
+
+    public String hash(String lozinka) {
+<span class="fc" id="L20">        return bcrypt.encode(lozinka);</span>
+    }
+
+    public boolean provjeri(String lozinka, String spremljeniHash) {
+<span class="pc bpc" id="L24" title="2 of 4 branches missed.">        if (lozinka == null || spremljeniHash == null) return false;</span>
+        // M05: Format od 64 heksadekadska znaka prepoznaje stare SHA-256 zapise.
+        // Nakon uspješne provjere KorisnikService ih može zamijeniti BCrypt hashom;
+        // sama provjera ne prepisuje bazu. Usporedba sažetaka koristi MessageDigest.isEqual.
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if (spremljeniHash.matches(&quot;[0-9a-f]{64}&quot;)) {</span>
+            try {
+<span class="nc" id="L30">                byte[] hash = MessageDigest.getInstance(&quot;SHA-256&quot;).digest(lozinka.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L31">                return MessageDigest.isEqual(HexFormat.of().formatHex(hash).getBytes(StandardCharsets.US_ASCII),</span>
+<span class="nc" id="L32">                        spremljeniHash.getBytes(StandardCharsets.US_ASCII));</span>
+<span class="nc" id="L33">            } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L34">                throw new IllegalStateException(&quot;SHA-256 nije dostupan&quot;, e);</span>
+            }
+        }
+        // M05: BCrypt ima granicu od 72 bajta; odbijanje sprečava podudaranje samo prefiksa.
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (lozinka.getBytes(StandardCharsets.UTF_8).length &gt; 72) return false;</span>
+<span class="fc" id="L39">        return bcrypt.matches(lozinka, spremljeniHash);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

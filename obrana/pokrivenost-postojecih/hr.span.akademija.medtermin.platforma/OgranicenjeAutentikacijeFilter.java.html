@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OgranicenjeAutentikacijeFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">OgranicenjeAutentikacijeFilter.java</span></div><h1>OgranicenjeAutentikacijeFilter.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/** Lokalno ograničenje pokušaja po izravnoj adresi klijenta; ne čita nepouzdani X-Forwarded-For. */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 5)
+public class OgranicenjeAutentikacijeFilter extends OncePerRequestFilter {
+<span class="fc" id="L24">    private static final Duration TRAJANJE = Duration.ofMinutes(15);</span>
+    private static final int MAKS_KLIJENATA = 10_000;
+<span class="fc" id="L26">    private record Prozor(Instant istjece, int broj) { }</span>
+<span class="fc" id="L27">    private final Map&lt;String, Prozor&gt; prozori = new HashMap&lt;&gt;();</span>
+    private final Clock sat;
+<span class="fc" id="L29">    @Value(&quot;${app.auth-limit.login:10}&quot;)</span>
+    private int prijave = 10;
+<span class="fc" id="L31">    @Value(&quot;${app.auth-limit.reset:5}&quot;)</span>
+    private int reseti = 5;
+
+<span class="fc" id="L34">    public OgranicenjeAutentikacijeFilter() { this(Clock.systemUTC()); }</span>
+<span class="fc" id="L35">    OgranicenjeAutentikacijeFilter(Clock sat) { this.sat = sat; }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="fc" id="L40">        String vrsta = vrsta(request);</span>
+<span class="pc bpc" id="L41" title="1 of 4 branches missed.">        if (vrsta != null &amp;&amp; !dopusti(vrsta, request.getRemoteAddr())) {</span>
+<span class="nc" id="L42">            response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(TRAJANJE.toSeconds()));</span>
+<span class="nc" id="L43">            response.sendError(429, &quot;Previše pokušaja. Pokušajte kasnije.&quot;);</span>
+<span class="nc" id="L44">            return;</span>
+        }
+<span class="fc" id="L46">        chain.doFilter(request, response);</span>
+<span class="fc" id="L47">    }</span>
+
+    private static String vrsta(HttpServletRequest request) {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!&quot;POST&quot;.equals(request.getMethod())) return null;</span>
+<span class="fc bfc" id="L51" title="All 3 branches covered.">        return switch (request.getServletPath()) {</span>
+<span class="fc" id="L52">            case &quot;/prijava&quot;, &quot;/api/auth/login&quot; -&gt; &quot;prijava&quot;;</span>
+<span class="fc" id="L53">            case &quot;/api/auth/reset-zahtjev&quot;, &quot;/api/auth/reset&quot;, &quot;/reset&quot; -&gt; &quot;reset&quot;;</span>
+<span class="fc" id="L54">            default -&gt; null;</span>
+        };
+    }
+
+    private synchronized boolean dopusti(String vrsta, String adresa) {
+<span class="fc" id="L59">        Instant sada = sat.instant();</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        prozori.values().removeIf(p -&gt; !p.istjece().isAfter(sada));</span>
+<span class="fc" id="L61">        String kljuc = vrsta + &quot;:&quot; + adresa;</span>
+<span class="fc" id="L62">        Prozor postojeci = prozori.get(kljuc);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        int limit = &quot;prijava&quot;.equals(vrsta) ? prijave : reseti;</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (limit &lt; 1) return false;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (postojeci == null) {</span>
+            // Kad je memorijska tablica puna, nove pokušaje odbijamo umjesto
+            // nekontroliranog rasta ili izbacivanja ograničenja drugih klijenata.
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">            if (prozori.size() &gt;= MAKS_KLIJENATA) return false;</span>
+<span class="fc" id="L69">            prozori.put(kljuc, new Prozor(sada.plus(TRAJANJE), 1));</span>
+<span class="fc" id="L70">            return true;</span>
+        }
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (postojeci.broj() &gt;= limit) return false;</span>
+<span class="fc" id="L73">        prozori.put(kljuc, new Prozor(postojeci.istjece(), postojeci.broj() + 1));</span>
+<span class="fc" id="L74">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PocetniPodaci.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin</a> &gt; <span class="el_source">PocetniPodaci.java</span></div><h1>PocetniPodaci.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin;
+
+import hr.span.akademija.medtermin.platforma.KorisnikService;
+import hr.span.akademija.medtermin.platforma.Pohrana;
+import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * Početni podaci (baza je u memoriji pa se puni pri svakom pokretanju). Lozinke se spremaju istom
+ * metodom kao pri registraciji.
+ */
+@Component
+public class PocetniPodaci implements CommandLineRunner {
+
+<span class="fc" id="L19">    private static final Logger log = LoggerFactory.getLogger(PocetniPodaci.class);</span>
+
+    private final JdbcTemplate jdbc;
+    private final KorisnikService korisnici;
+    private final Pohrana pohrana;
+
+<span class="fc" id="L25">    public PocetniPodaci(JdbcTemplate jdbc, KorisnikService korisnici, Pohrana pohrana) {</span>
+<span class="fc" id="L26">        this.jdbc = jdbc;</span>
+<span class="fc" id="L27">        this.korisnici = korisnici;</span>
+<span class="fc" id="L28">        this.pohrana = pohrana;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+    public void run(String... args) throws Exception {
+<span class="fc" id="L33">        pohrana.pripremi();</span>
+<span class="fc" id="L34">        zapisiDatoteke();</span>
+<span class="fc" id="L35">        Integer postojeci = jdbc.queryForObject(&quot;SELECT COUNT(*) FROM korisnici&quot;, Integer.class);</span>
+<span class="pc bpc" id="L36" title="2 of 4 branches missed.">        if (postojeci != null &amp;&amp; postojeci &gt; 0) {</span>
+<span class="nc" id="L37">            return;</span>
+        }
+<span class="fc" id="L39">        korisnici.kreiraj(&quot;ana&quot;, &quot;Ana12345!&quot;, &quot;ana@primjer.hr&quot;, &quot;Ana&quot;, &quot;Anić&quot;, &quot;KORISNIK&quot;, &quot;48291736504&quot;);</span>
+<span class="fc" id="L40">        korisnici.kreiraj(&quot;marko&quot;, &quot;Marko12345!&quot;, &quot;marko@primjer.hr&quot;, &quot;Marko&quot;, &quot;Marić&quot;, &quot;KORISNIK&quot;, &quot;73019485267&quot;);</span>
+<span class="fc" id="L41">        korisnici.kreiraj(&quot;dr.horvat&quot;, &quot;Ovlasteni12345!&quot;, &quot;dr.horvat@primjer.hr&quot;, &quot;Ivan&quot;, &quot;Horvat&quot;, &quot;LIJECNIK&quot;,</span>
+                &quot;50617283940&quot;);
+<span class="fc" id="L43">        korisnici.kreiraj(&quot;admin&quot;, &quot;Admin12345!&quot;, &quot;admin@primjer.hr&quot;, &quot;Ivana&quot;, &quot;Admin&quot;, &quot;ADMIN&quot;, &quot;61728394051&quot;);</span>
+
+<span class="fc" id="L45">        lijecnik(&quot;Ivan&quot;, &quot;Horvat&quot;, &quot;Kardiologija&quot;, &quot;Ordinacija 1&quot;);</span>
+<span class="fc" id="L46">        lijecnik(&quot;Maja&quot;, &quot;Kovačević&quot;, &quot;Dermatologija&quot;, &quot;Ordinacija 2&quot;);</span>
+<span class="fc" id="L47">        lijecnik(&quot;Tomislav&quot;, &quot;Babić&quot;, &quot;Ortopedija&quot;, &quot;Ordinacija 3&quot;);</span>
+<span class="fc" id="L48">        lijecnik(&quot;Petra&quot;, &quot;Novak&quot;, &quot;Neurologija&quot;, &quot;Ordinacija 4&quot;);</span>
+<span class="fc" id="L49">        lijecnik(&quot;Luka&quot;, &quot;Jurić&quot;, &quot;Interna medicina&quot;, &quot;Ordinacija 5&quot;);</span>
+<span class="fc" id="L50">        lijecnik(&quot;Ema&quot;, &quot;Vuković&quot;, &quot;Oftalmologija&quot;, &quot;Ordinacija 6&quot;);</span>
+
+<span class="fc" id="L52">        termin(1, &quot;2026-12-01T08:00&quot;, 1, 1);</span>
+<span class="fc" id="L53">        termin(2, &quot;2026-12-01T09:00&quot;, 1, 1);</span>
+<span class="fc" id="L54">        termin(1, &quot;2026-12-01T09:00&quot;, 1, 0);</span>
+<span class="fc" id="L55">        termin(2, &quot;2026-12-01T10:00&quot;, 1, 0);</span>
+<span class="fc" id="L56">        termin(3, &quot;2026-12-02T08:00&quot;, 1, 0);</span>
+<span class="fc" id="L57">        termin(4, &quot;2026-12-02T09:00&quot;, 1, 0);</span>
+<span class="fc" id="L58">        termin(5, &quot;2026-12-02T10:00&quot;, 1, 0);</span>
+<span class="fc" id="L59">        termin(6, &quot;2026-12-03T08:00&quot;, 1, 0);</span>
+<span class="fc" id="L60">        termin(1, &quot;2026-12-03T09:00&quot;, 3, 0);</span>
+<span class="fc" id="L61">        termin(3, &quot;2026-12-03T10:00&quot;, 1, 0);</span>
+
+<span class="fc" id="L63">        rezervacija(1, &quot;ana&quot;, &quot;Kontrolni pregled tlaka&quot;, &quot;48291736504&quot;, &quot;BIS-1-1000&quot;);</span>
+<span class="fc" id="L64">        rezervacija(2, &quot;marko&quot;, &quot;Bolovi u leđima&quot;, &quot;73019485267&quot;, &quot;BIS-2-1000&quot;);</span>
+
+<span class="fc" id="L66">        nalaz(&quot;ana&quot;, &quot;Krvna slika&quot;, &quot;nalaz-ana-krvna-slika.txt&quot;);</span>
+<span class="fc" id="L67">        nalaz(&quot;marko&quot;, &quot;RTG kralježnice&quot;, &quot;nalaz-marko-rtg.txt&quot;);</span>
+<span class="fc" id="L68">        log.info(&quot;Početni podaci su učitani&quot;);</span>
+<span class="fc" id="L69">    }</span>
+
+    private void zapisiDatoteke() throws Exception {
+<span class="fc" id="L72">        pohrana.zapisiAkoNePostoji(&quot;nalaz-ana-krvna-slika.txt&quot;, &quot;&quot;&quot;</span>
+                Poliklinika MedTermin – laboratorijski nalaz
+                Pacijent: Ana Anić
+                Pretraga: kompletna krvna slika
+                Leukociti: 6,4 x10^9/L (referentno 3,4 – 9,7)
+                Eritrociti: 4,62 x10^12/L (referentno 3,86 – 5,08)
+                Hemoglobin: 138 g/L (referentno 119 – 157)
+                Trombociti: 245 x10^9/L (referentno 158 – 424)
+                Zaključak: nalaz unutar referentnih vrijednosti.
+                &quot;&quot;&quot;);
+<span class="fc" id="L82">        pohrana.zapisiAkoNePostoji(&quot;nalaz-marko-rtg.txt&quot;, &quot;&quot;&quot;</span>
+                Poliklinika MedTermin – radiološki nalaz
+                Pacijent: Marko Marić
+                Pretraga: RTG lumbalne kralježnice u dva smjera
+                Nalaz: blago smanjena visina intervertebralnog prostora L4-L5, bez znakova prijeloma.
+                Preporuka: fizikalna terapija i kontrola za tri mjeseca.
+                &quot;&quot;&quot;);
+<span class="fc" id="L89">    }</span>
+
+    private void lijecnik(String ime, String prezime, String specijalizacija, String ordinacija) {
+<span class="fc" id="L92">        jdbc.update(&quot;INSERT INTO lijecnici (ime, prezime, specijalizacija, ordinacija) VALUES (?, ?, ?, ?)&quot;,</span>
+                ime, prezime, specijalizacija, ordinacija);
+<span class="fc" id="L94">    }</span>
+
+    private void termin(long lijecnikId, String pocetak, int kapacitet, int zauzeto) {
+<span class="fc" id="L97">        jdbc.update(&quot;INSERT INTO termini (lijecnik_id, pocetak, kapacitet, zauzeto) VALUES (?, ?, ?, ?)&quot;,</span>
+<span class="fc" id="L98">                lijecnikId, LocalDateTime.parse(pocetak), kapacitet, zauzeto);</span>
+<span class="fc" id="L99">    }</span>
+
+    private void rezervacija(long terminId, String pacijent, String napomena, String oib, String oznaka) {
+<span class="fc" id="L102">        jdbc.update(&quot;INSERT INTO rezervacije (termin_id, pacijent, napomena, oib, kreirano, oznaka_bis) &quot;</span>
+<span class="fc" id="L103">                + &quot;VALUES (?, ?, ?, ?, ?, ?)&quot;, terminId, pacijent, napomena, oib, LocalDateTime.now(), oznaka);</span>
+<span class="fc" id="L104">    }</span>
+
+    private void nalaz(String pacijent, String naziv, String datoteka) {
+<span class="fc" id="L107">        jdbc.update(&quot;INSERT INTO nalazi (pacijent, naziv, datoteka) VALUES (?, ?, ?)&quot;, pacijent, naziv, datoteka);</span>
+<span class="fc" id="L108">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

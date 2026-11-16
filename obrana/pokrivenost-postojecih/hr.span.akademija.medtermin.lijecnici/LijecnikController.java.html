@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LijecnikController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.lijecnici</a> &gt; <span class="el_source">LijecnikController.java</span></div><h1>LijecnikController.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.lijecnici;
+
+import hr.span.akademija.medtermin.platforma.PrijavljeniKorisnik;
+import hr.span.akademija.medtermin.platforma.ApiException;
+import java.util.Locale;
+import java.util.List;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/lijecnici&quot;)
+public class LijecnikController {
+
+<span class="fc" id="L18">    public record Lijecnik(long id, String ime, String prezime, String specijalizacija, String ordinacija) {</span>
+    }
+
+<span class="fc" id="L21">    private static final RowMapper&lt;Lijecnik&gt; MAPPER = (rs, i) -&gt; new Lijecnik(rs.getLong(&quot;id&quot;),</span>
+<span class="fc" id="L22">            rs.getString(&quot;ime&quot;), rs.getString(&quot;prezime&quot;), rs.getString(&quot;specijalizacija&quot;), rs.getString(&quot;ordinacija&quot;));</span>
+
+
+    private final JdbcTemplate jdbc;
+
+<span class="fc" id="L27">    public LijecnikController(JdbcTemplate jdbc) {</span>
+<span class="fc" id="L28">        this.jdbc = jdbc;</span>
+<span class="fc" id="L29">    }</span>
+
+    /** Popis liječnika, npr. {@code GET /api/lijecnici?sort=prezime&amp;smjer=asc}. */
+    @GetMapping
+    public List&lt;Lijecnik&gt; popis(@RequestParam(defaultValue = &quot;prezime&quot;) String sort,
+                                @RequestParam(defaultValue = &quot;asc&quot;) String smjer,
+                                PrijavljeniKorisnik korisnik) {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): semgrep java.spring.security.injection.tainted-sql-string.tainted-sql-string: User data flows into this manually-constructed SQL string. User data can be safely inserted into SQL strings using prepared statements or an object-relational mapper (ORM). Manually-constructed SQL strings is a possible indicator of SQL ...
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M11 [Semgrep + FindSecBugs SQL_INJECTION_SPRING_JDBC; rucna potvrda toka]: sort i smjer dolaze iz zahtjeva; mapirati stupce na allowlistu i smjer na ASC/DESC. SQL identifikatori se ne bindaju s ?. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): semgrep java.spring.security.audit.spring-sqli.spring-sqli: Detected a string argument from a public method contract in a raw SQL statement. This could lead to SQL injection if variables in the SQL statement are not properly sanitized. Use a prepared statements (java.sql.PreparedStatement) instea...
+        // M11: Ranije su sort i smjer iz zahtjeva izravno dodavani u SQL, pa je
+        // napadač mogao poslati SQL fragment. Identifikatori stupaca ne mogu se
+        // zamijeniti običnim bind parametrom: switch mapira samo poznate stupce,
+        // drugi switch dopušta samo ASC ili DESC, a nepoznate vrijednosti vraćaju 400.
+        // SQL se sastavlja isključivo iz tih fiksnih vrijednosti.
+<span class="pc bpc" id="L47" title="3 of 6 branches missed.">        String stupac = switch (sort.toLowerCase(Locale.ROOT)) {</span>
+<span class="nc" id="L48">            case &quot;id&quot; -&gt; &quot;id&quot;;</span>
+<span class="fc" id="L49">            case &quot;ime&quot; -&gt; &quot;ime&quot;;</span>
+<span class="fc" id="L50">            case &quot;prezime&quot; -&gt; &quot;prezime&quot;;</span>
+<span class="fc" id="L51">            case &quot;specijalizacija&quot; -&gt; &quot;specijalizacija&quot;;</span>
+<span class="nc" id="L52">            case &quot;ordinacija&quot; -&gt; &quot;ordinacija&quot;;</span>
+<span class="pc" id="L53">            default -&gt; throw ApiException.neispravno(&quot;Neispravno sortiranje.&quot;);</span>
+        };
+<span class="pc bpc" id="L55" title="1 of 3 branches missed.">        String smjerSql = switch (smjer.toLowerCase(Locale.ROOT)) {</span>
+<span class="fc" id="L56">            case &quot;asc&quot; -&gt; &quot;ASC&quot;;</span>
+<span class="fc" id="L57">            case &quot;desc&quot; -&gt; &quot;DESC&quot;;</span>
+<span class="pc" id="L58">            default -&gt; throw ApiException.neispravno(&quot;Neispravan smjer sortiranja.&quot;);</span>
+        };
+<span class="fc" id="L60">        String sql = &quot;SELECT id, ime, prezime, specijalizacija, ordinacija FROM lijecnici ORDER BY &quot; + stupac + &quot; &quot; + smjerSql;</span>
+<span class="fc" id="L61">        return jdbc.query(sql, MAPPER);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

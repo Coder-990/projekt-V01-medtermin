@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JdbcPomoc.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">JdbcPomoc.java</span></div><h1>JdbcPomoc.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.sql.PreparedStatement;
+import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+
+/** Pomoćne metode za JdbcTemplate. */
+public final class JdbcPomoc {
+
+    private JdbcPomoc() {
+    }
+
+    /** Izvršava INSERT i vraća generirani {@code id}. */
+    public static long umetni(JdbcTemplate jdbc, String sql, Object... argumenti) {
+<span class="fc" id="L17">        KeyHolder kljuc = new GeneratedKeyHolder();</span>
+<span class="fc" id="L18">        jdbc.update(con -&gt; {</span>
+            // TODO(sec): spotbugs OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE [EXPERIMENTAL; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.JdbcPomoc.lambda$umetni$0(String, Object[], Connection) may fail to clean up java.sql.Statement on checked exception
+            // TODO(sec): T02 [FindSecBugs SQL_INJECTION_JDBC; provjera]: Pregledani pozivatelji koriste fiksni SQL i bind parametre; ne oznacavati potvrdenom injekcijom. Zadrzati taj ugovor i provjeravati nove pozive. Izvor/detalji: alati/poslije/pregled-koda.md.
+<span class="fc" id="L21">            PreparedStatement ps = con.prepareStatement(sql, new String[] {&quot;ID&quot;});</span>
+            // OBL_UNSATISFIED_OBLIGATION: JdbcTemplate zatvara statement tek nakon što
+            // ga tvorac vrati. Ako vezivanje parametara ne uspije, ovdje ga zatvaramo.
+            try {
+<span class="fc" id="L25">                new ArgumentPreparedStatementSetter(argumenti).setValues(ps);</span>
+<span class="fc" id="L26">                return ps;</span>
+<span class="nc" id="L27">            } catch (java.sql.SQLException | RuntimeException e) {</span>
+                try {
+<span class="nc" id="L29">                    ps.close();</span>
+<span class="nc" id="L30">                } catch (java.sql.SQLException zatvaranje) {</span>
+<span class="nc" id="L31">                    e.addSuppressed(zatvaranje);</span>
+<span class="nc" id="L32">                }</span>
+<span class="nc" id="L33">                throw e;</span>
+            }
+        }, kljuc);
+<span class="fc" id="L36">        Number id = kljuc.getKey();</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L38">            throw new IllegalStateException(&quot;Baza nije vratila generirani ključ.&quot;);</span>
+        }
+<span class="fc" id="L40">        return id.longValue();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

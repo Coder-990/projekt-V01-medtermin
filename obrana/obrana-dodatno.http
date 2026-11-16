@@ -1,0 +1,83 @@
+### Dodatni primjeri za usmenu obranu — IntelliJ HTTP Client
+# Aplikaciju pokreni lokalno prema obrana/obrana-projekta.md.
+# Koraci 3–7 mijenjaju samo novoregistrirani testni račun.
+# Pri svakoj promjeni porta ponovno pokreni prijavu i registraciju:
+# tokeni, testni računi i pošta razlikuju se između instanci.
+@host = http://localhost:8081
+# U koraku 6 kopiraj token iz lokalne pošte bez navodnika.
+@resetToken = ZALIJEPI_TOKEN_IZ_POSTE
+
+### 1. Prijava Ane za YAML primjer
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username":"ana","password":"Ana12345!"}
+
+> {%
+    if (response.status === 200 && response.body.token) {
+        client.global.set("anaTokenDodatno", response.body.token);
+        client.log("Token je spremljen za ovu instancu.");
+    } else {
+        client.global.clear("anaTokenDodatno");
+        client.log("Prijava nije uspjela; provjeri aplikaciju i port.");
+    }
+%}
+
+### 2. YAML: bezopasna Java URL oznaka u nepoznatom polju
+# Prije: HTTP 200; izvorni parser stvara URL objekt i zanemaruje nepoznato polje.
+# Poslije: HTTP 400; SafeConstructor odbija Java oznaku.
+# Primjer ne otvara URL niti kontaktira mrežu. Uputa za dokaz poziva konstruktora
+# bezopasne testne klase nalazi se u obrana/obrana-projekta.md.
+POST {{host}}/api/postavke
+Authorization: Bearer {{anaTokenDodatno}}
+Content-Type: application/yaml
+
+neocekivano: !!java.net.URL [http://127.0.0.1/]
+
+### 3. Registracija novog računa za demonstraciju
+# Novi username sadrži vremensku oznaku. Lozinka je SAMO za lokalni test.
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{"username":"obrana{{$timestamp}}","password":"Obrana123!","email":"obrana@primjer.hr","ime":"Test","prezime":"Obrana"}
+
+> {%
+    if (response.status === 201 && response.body.username) {
+        client.global.set("korisnikObrane", response.body.username);
+        client.log("Registriran testni korisnik: " + response.body.username);
+    } else {
+        client.global.clear("korisnikObrane");
+        client.log("Registracija nije uspjela; pokušaj ponovno.");
+    }
+%}
+
+### 4. Prijava: pogledaj terminal aplikacije, ne samo HTTP odgovor
+# Prije: log prijave sadržavao je i lozinku Obrana123!; poslije: samo događaj.
+# Demonstriraj isključivo s ovim testnim računom, ne sa stvarnom lozinkom.
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username":"{{korisnikObrane}}","password":"Obrana123!"}
+
+### 5. Zatraži reset za testni račun
+# Obje verzije: HTTP 202. Poruka se sprema u lokalnu mapu pošte aplikacije.
+# Upute za mapu i postupak nalaze se u obrana/obrana-projekta.md.
+POST {{host}}/api/auth/reset-zahtjev
+Content-Type: application/json
+
+{"username":"{{korisnikObrane}}"}
+
+### 6. Prvo korištenje reset tokena
+# Kopiraj vrijednost Token iz najnovije testne poruke u @resetToken na vrhu.
+# Obje verzije: HTTP 200. Time se mijenja lozinka testnog računa.
+POST {{host}}/api/auth/reset
+Content-Type: application/json
+
+{"token":"{{resetToken}}","novaLozinka":"Nova12345!"}
+
+### 7. Ponovno korištenje ISTOG tokena
+# Prije: HTTP 200, token se ponovno koristi; poslije: HTTP 400, token je potrošen.
+POST {{host}}/api/auth/reset
+Content-Type: application/json
+
+{"token":"{{resetToken}}","novaLozinka":"Druga12345!"}

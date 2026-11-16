@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RezervacijaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.rezervacije</a> &gt; <span class="el_source">RezervacijaService.java</span></div><h1>RezervacijaService.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.rezervacije;
+
+import hr.span.akademija.medtermin.platforma.ApiException;
+import hr.span.akademija.medtermin.platforma.JdbcPomoc;
+import hr.span.akademija.medtermin.platforma.PrijavljeniKorisnik;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class RezervacijaService {
+
+<span class="fc" id="L21">    private static final Logger log = LoggerFactory.getLogger(RezervacijaService.class);</span>
+<span class="fc" id="L22">    private static final Pattern OIB = Pattern.compile(&quot;\\d{11}&quot;);</span>
+
+<span class="fc" id="L24">    public record NovaRezervacija(Long terminId, String napomena, String oib) {</span>
+    }
+
+<span class="fc" id="L27">    public record Rezervacija(long id, long terminId, String pacijent, String lijecnik, LocalDateTime pocetak,</span>
+                              String napomena, LocalDateTime kreirano) {
+    }
+
+    private static final String SELECT = &quot;SELECT r.id, r.termin_id, r.pacijent, r.napomena, r.kreirano, t.pocetak, &quot;
+            + &quot;l.ime, l.prezime FROM rezervacije r JOIN termini t ON t.id = r.termin_id &quot;
+            + &quot;JOIN lijecnici l ON l.id = t.lijecnik_id&quot;;
+
+<span class="fc" id="L35">    private static final RowMapper&lt;Rezervacija&gt; MAPPER = (rs, i) -&gt; new Rezervacija(</span>
+<span class="fc" id="L36">            rs.getLong(&quot;id&quot;), rs.getLong(&quot;termin_id&quot;), rs.getString(&quot;pacijent&quot;),</span>
+<span class="fc" id="L37">            &quot;dr. &quot; + rs.getString(&quot;ime&quot;) + &quot; &quot; + rs.getString(&quot;prezime&quot;),</span>
+<span class="fc" id="L38">            rs.getObject(&quot;pocetak&quot;, LocalDateTime.class), rs.getString(&quot;napomena&quot;),</span>
+<span class="fc" id="L39">            rs.getObject(&quot;kreirano&quot;, LocalDateTime.class));</span>
+
+    private final JdbcTemplate jdbc;
+    private final BolnickiSustavKlijent bis;
+
+<span class="fc" id="L44">    public RezervacijaService(JdbcTemplate jdbc, BolnickiSustavKlijent bis) {</span>
+<span class="fc" id="L45">        this.jdbc = jdbc;</span>
+<span class="fc" id="L46">        this.bis = bis;</span>
+<span class="fc" id="L47">    }</span>
+
+    public Optional&lt;Rezervacija&gt; pronadi(long id) {
+<span class="fc" id="L50">        return jdbc.query(SELECT + &quot; WHERE r.id = ?&quot;, MAPPER, id).stream().findFirst();</span>
+    }
+
+    public List&lt;Rezervacija&gt; rezervacijeKorisnika(String username) {
+<span class="fc" id="L54">        return jdbc.query(SELECT + &quot; WHERE r.pacijent = ? ORDER BY t.pocetak, r.id&quot;, MAPPER, username);</span>
+    }
+
+    public long kreiraj(NovaRezervacija zahtjev, PrijavljeniKorisnik korisnik) {
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        if (zahtjev == null || zahtjev.terminId() == null) {</span>
+<span class="fc" id="L59">            throw ApiException.neispravno(&quot;Termin je obavezan.&quot;);</span>
+        }
+<span class="fc bfc" id="L61" title="All 4 branches covered.">        if (zahtjev.oib() == null || !OIB.matcher(zahtjev.oib()).matches()) {</span>
+<span class="fc" id="L62">            throw ApiException.neispravno(&quot;OIB mora imati 11 znamenki.&quot;);</span>
+        }
+<span class="fc bfc" id="L64" title="All 4 branches covered.">        if (zahtjev.napomena() != null &amp;&amp; zahtjev.napomena().length() &gt; 1000) {</span>
+<span class="fc" id="L65">            throw ApiException.neispravno(&quot;Napomena smije imati najviše 1000 znakova.&quot;);</span>
+        }
+<span class="fc" id="L67">        long terminId = zahtjev.terminId();</span>
+<span class="fc" id="L68">        Integer postoji = jdbc.queryForObject(&quot;SELECT COUNT(*) FROM termini WHERE id = ?&quot;, Integer.class, terminId);</span>
+<span class="pc bpc" id="L69" title="1 of 4 branches missed.">        if (postoji == null || postoji == 0) {</span>
+<span class="fc" id="L70">            throw ApiException.nijePronadeno(&quot;Termin nije pronađen.&quot;);</span>
+        }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M12 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Cijeli record otkriva OIB i napomenu; minimalni log bez osobnih podataka i obrada CR/LF znakova. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M12: Cijeli NovaRezervacija record ranije je u log zapisivao OIB i slobodnu
+        // napomenu; napomena je mogla sadržavati i znakove za novi redak. Sada bilježimo
+        // samo broj termina, bez osjetljivih podataka i proizvoljnog teksta korisnika.
+<span class="fc" id="L77">        log.info(&quot;Zahtjev za rezervaciju termina {}&quot;, terminId);</span>
+<span class="fc" id="L78">        int azurirano = jdbc.update(</span>
+<span class="fc" id="L79">                &quot;UPDATE termini SET zauzeto = zauzeto + 1 WHERE id = ? AND zauzeto &lt; kapacitet&quot;, terminId);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (azurirano == 0) {</span>
+<span class="fc" id="L81">            throw new ApiException(HttpStatus.CONFLICT, &quot;Nema slobodnih mjesta.&quot;);</span>
+        }
+        try {
+<span class="fc" id="L84">            String oznaka = bis.upisiURaspored(terminId, korisnik.username());</span>
+<span class="fc" id="L85">            return spremi(zahtjev, korisnik, oznaka);</span>
+<span class="nc" id="L86">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L87">            jdbc.update(&quot;UPDATE termini SET zauzeto = zauzeto - 1 WHERE id = ?&quot;, terminId);</span>
+<span class="nc" id="L88">            throw e;</span>
+        }
+    }
+
+    @Transactional
+    public void obrisi(long id, PrijavljeniKorisnik korisnik) {
+<span class="fc" id="L94">        Rezervacija rezervacija = pronadi(id)</span>
+<span class="fc bfc" id="L95" title="All 4 branches covered.">                .filter(r -&gt; korisnik.isAdmin() || r.pacijent().equals(korisnik.username()))</span>
+<span class="fc" id="L96">                .orElseThrow(() -&gt; ApiException.nijePronadeno(&quot;Rezervacija nije pronađena.&quot;));</span>
+<span class="fc" id="L97">        jdbc.update(&quot;DELETE FROM rezervacije WHERE id = ?&quot;, rezervacija.id());</span>
+<span class="fc" id="L98">        jdbc.update(&quot;UPDATE termini SET zauzeto = zauzeto - 1 WHERE id = ? AND zauzeto &gt; 0&quot;, rezervacija.terminId());</span>
+        // M12: I kod otkazivanja bilježimo samo broj događaja, bez korisničkih podataka.
+<span class="fc" id="L100">        log.info(&quot;Rezervacija {} je otkazana&quot;, id);</span>
+<span class="fc" id="L101">    }</span>
+
+    private long spremi(NovaRezervacija zahtjev, PrijavljeniKorisnik korisnik, String oznakaBis) {
+<span class="fc" id="L104">        return JdbcPomoc.umetni(jdbc,</span>
+                &quot;INSERT INTO rezervacije (termin_id, pacijent, napomena, oib, kreirano, oznaka_bis) &quot;
+                        + &quot;VALUES (?, ?, ?, ?, ?, ?)&quot;,
+<span class="fc" id="L107">                zahtjev.terminId(), korisnik.username(), zahtjev.napomena(), zahtjev.oib(), LocalDateTime.now(),</span>
+                oznakaBis);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

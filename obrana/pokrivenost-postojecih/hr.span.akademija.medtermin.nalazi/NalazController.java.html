@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NalazController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.nalazi</a> &gt; <span class="el_source">NalazController.java</span></div><h1>NalazController.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.nalazi;
+
+import hr.span.akademija.medtermin.platforma.ApiException;
+import hr.span.akademija.medtermin.platforma.Pohrana;
+import hr.span.akademija.medtermin.platforma.PrijavljeniKorisnik;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.DirectoryStream;
+import java.nio.file.SecureDirectoryStream;
+import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.channels.Channels;
+import java.util.Set;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/nalazi&quot;)
+public class NalazController {
+
+<span class="fc" id="L43">    private static final Logger log = LoggerFactory.getLogger(NalazController.class);</span>
+<span class="fc" id="L44">    private static final MediaType TEXT_PLAIN_UTF8 = new MediaType(&quot;text&quot;, &quot;plain&quot;, StandardCharsets.UTF_8);</span>
+
+<span class="fc" id="L46">    public record Nalaz(long id, String pacijent, String naziv, String datoteka) {</span>
+    }
+
+<span class="fc" id="L49">    public enum Format {</span>
+<span class="fc" id="L50">        JSON, PDF;</span>
+
+        static Optional&lt;Format&gt; procitaj(String vrijednost) {
+<span class="fc" id="L53">            return Arrays.stream(values()).filter(f -&gt; f.name().equalsIgnoreCase(vrijednost.trim())).findFirst();</span>
+        }
+    }
+
+<span class="fc" id="L57">    private static final RowMapper&lt;Nalaz&gt; MAPPER = (rs, i) -&gt; new Nalaz(rs.getLong(&quot;id&quot;), rs.getString(&quot;pacijent&quot;),</span>
+<span class="fc" id="L58">            rs.getString(&quot;naziv&quot;), rs.getString(&quot;datoteka&quot;));</span>
+
+    private final JdbcTemplate jdbc;
+    private final Pohrana pohrana;
+
+<span class="fc" id="L63">    public NalazController(JdbcTemplate jdbc, Pohrana pohrana) {</span>
+<span class="fc" id="L64">        this.jdbc = jdbc;</span>
+<span class="fc" id="L65">        this.pohrana = pohrana;</span>
+<span class="fc" id="L66">    }</span>
+
+    @GetMapping(&quot;/moji&quot;)
+    public List&lt;Nalaz&gt; moji(PrijavljeniKorisnik korisnik) {
+<span class="fc" id="L70">        return jdbc.query(&quot;SELECT id, pacijent, naziv, datoteka FROM nalazi WHERE pacijent = ? ORDER BY id&quot;,</span>
+<span class="fc" id="L71">                MAPPER, korisnik.username());</span>
+    }
+
+    /** Nalaz u JSON obliku (metapodaci i sadržaj) ili kao PDF: {@code GET /api/nalazi/1?format=pdf}. */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; nalaz(@PathVariable long id, @RequestParam(required = false) String format,
+                                   PrijavljeniKorisnik korisnik) throws IOException {
+<span class="fc" id="L78">        Nalaz nalaz = pronadi(id).orElseThrow(() -&gt; ApiException.nijePronadeno(&quot;Nalaz nije pronađen.&quot;));</span>
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M01 [rucni pregled]: Provjeriti vlasnika prije parsiranja formata; nevaljani format preskace autorizaciju i vraca tudi nalaz. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M01: Ranije je provjera vlasnika bila unutar obrade formata; nepoznat format
+        // preskočio ju je i vratio JSON tuđeg nalaza. Sada prije izbora JSON-a ili PDF-a
+        // dopuštamo samo vlasnika ili administratora, a ostalima vraćamo 404.
+        // Pokriveno u NalaziFunkcionalniTest.nevaljaniFormatVracaNalazUzNapomenu.
+<span class="fc bfc" id="L85" title="All 4 branches covered.">        if (!korisnik.isAdmin() &amp;&amp; !nalaz.pacijent().equals(korisnik.username())) {</span>
+<span class="fc" id="L86">            throw ApiException.nijePronadeno(&quot;Nalaz nije pronađen.&quot;);</span>
+        }
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        String trazeni = format == null ? &quot;json&quot; : format;</span>
+<span class="fc" id="L89">        Format odabrani = Format.JSON;</span>
+<span class="fc" id="L90">        String napomena = null;</span>
+        try {
+<span class="fc" id="L92">            odabrani = Format.valueOf(trazeni.trim().toUpperCase(Locale.ROOT));</span>
+<span class="fc" id="L93">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L94">            log.warn(&quot;Neuspjela obrada formata za nalaz {}&quot;, id);</span>
+            // M01/M06: Ne vraćamo niti logiramo tekst iznimke koji može sadržavati korisnički unos.
+<span class="fc" id="L96">            napomena = &quot;Format nije prepoznat, prikazuje se JSON.&quot;;</span>
+<span class="fc" id="L97">        }</span>
+<span class="fc" id="L98">        return prikazi(nalaz, odabrani, napomena);</span>
+    }
+
+    /** Preuzimanje datoteke nalaza: {@code GET /api/nalazi/preuzmi?datoteka=nalaz-ana-krvna-slika.txt}. */
+    @GetMapping(&quot;/preuzmi&quot;)
+    public ResponseEntity&lt;byte[]&gt; preuzmi(@RequestParam String datoteka, PrijavljeniKorisnik korisnik)
+            throws IOException {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M02 [rucni pregled]: contains(username) nije provjera vlasnistva; vezati dokument uz vlasnika u bazi i provjeriti kanonsku putanju unutar pohrane (../, apsolutne putanje, symlink). Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M02: Naziv koji sadrži korisničko ime nije dokaz vlasništva: mogao bi biti
+        // naziv tuđeg dokumenta. Zato tražimo zapis u tablici nalazi i za običnog
+        // korisnika zahtijevamo podudaranje pacijenta; administrator može dohvatiti
+        // i tuđi registrirani dokument. Nepostojeći ili nedopušten zapis vraća 404.
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        Integer broj = korisnik.isAdmin()</span>
+<span class="fc" id="L112">                ? jdbc.queryForObject(&quot;SELECT COUNT(*) FROM nalazi WHERE datoteka = ?&quot;, Integer.class, datoteka)</span>
+<span class="fc" id="L113">                : jdbc.queryForObject(&quot;SELECT COUNT(*) FROM nalazi WHERE datoteka = ? AND pacijent = ?&quot;, Integer.class, datoteka, korisnik.username());</span>
+<span class="pc bpc" id="L114" title="1 of 4 branches missed.">        if (broj == null || broj == 0) {</span>
+<span class="fc" id="L115">            throw ApiException.nijePronadeno(&quot;Datoteka nije pronađena.&quot;);</span>
+        }
+<span class="fc" id="L117">        byte[] sadrzaj = procitajSigurno(datoteka);</span>
+<span class="fc" id="L118">        ContentDisposition privitak = ContentDisposition.attachment()</span>
+                // TODO(sec): spotbugs NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE [STYLE; provjeriti nalaz]: Possible null pointer dereference in hr.span.akademija.medtermin.nalazi.NalazController.preuzmi(String, PrijavljeniKorisnik) due to return value of called method
+<span class="fc" id="L120">                .filename(datoteka, StandardCharsets.UTF_8)</span>
+<span class="fc" id="L121">                .build();</span>
+<span class="fc" id="L122">        return ResponseEntity.ok()</span>
+<span class="fc" id="L123">                .contentType(TEXT_PLAIN_UTF8)</span>
+<span class="fc" id="L124">                .header(HttpHeaders.CONTENT_DISPOSITION, privitak.toString())</span>
+<span class="fc" id="L125">                .body(sadrzaj);</span>
+    }
+
+    // M02: Ime je jedna komponenta, bez apsolutne putanje ili podmapa. DirectoryStream
+    // drži otvorenu mapu, a SecureDirectoryStream otvara datoteku relativno na taj
+    // deskriptor uz NOFOLLOW_LINKS. Tako zamjena imena symlinkom između provjere i
+    // čitanja ne može preusmjeriti čitanje izvan pohrane. Ako OS nema sigurni stream,
+    // odbijamo čitanje umjesto povratka na nesigurnu provjeru pa otvaranje.
+    private byte[] procitajSigurno(String naziv) throws IOException {
+<span class="fc" id="L134">        Path relativna = Path.of(naziv);</span>
+<span class="pc bpc" id="L135" title="2 of 4 branches missed.">        if (relativna.isAbsolute() || relativna.getNameCount() != 1</span>
+<span class="pc bpc" id="L136" title="2 of 4 branches missed.">                || naziv.equals(&quot;.&quot;) || naziv.equals(&quot;..&quot;)) {</span>
+<span class="nc" id="L137">            throw ApiException.nijePronadeno(&quot;Datoteka nalaza nije pronađena.&quot;);</span>
+        }
+<span class="fc" id="L139">        try (DirectoryStream&lt;Path&gt; mapa = Files.newDirectoryStream(pohrana.dokumenti())) {</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            if (!(mapa instanceof SecureDirectoryStream&lt;Path&gt; sigurnaMapa)) {</span>
+<span class="nc" id="L141">                throw new IOException(&quot;Datotečni sustav ne podržava sigurno otvaranje dokumenata.&quot;);</span>
+            }
+<span class="fc" id="L143">            BasicFileAttributeView pogled = sigurnaMapa.getFileAttributeView(relativna,</span>
+                    BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            if (!pogled.readAttributes().isRegularFile()) {</span>
+<span class="nc" id="L146">                throw ApiException.nijePronadeno(&quot;Datoteka nalaza nije pronađena.&quot;);</span>
+            }
+<span class="fc" id="L148">            try (var kanal = sigurnaMapa.newByteChannel(relativna,</span>
+<span class="fc" id="L149">                    Set.&lt;OpenOption&gt;of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS));</span>
+<span class="fc" id="L150">                 var ulaz = Channels.newInputStream(kanal)) {</span>
+<span class="fc" id="L151">                return ulaz.readAllBytes();</span>
+            }
+<span class="fc" id="L153">        } catch (NoSuchFileException e) {</span>
+<span class="fc" id="L154">            throw ApiException.nijePronadeno(&quot;Datoteka nalaza nije pronađena.&quot;);</span>
+        }
+    }
+
+    private Optional&lt;Nalaz&gt; pronadi(long id) {
+<span class="fc" id="L159">        return jdbc.query(&quot;SELECT id, pacijent, naziv, datoteka FROM nalazi WHERE id = ?&quot;, MAPPER, id)</span>
+<span class="fc" id="L160">                .stream().findFirst();</span>
+    }
+
+    private ResponseEntity&lt;?&gt; prikazi(Nalaz nalaz, Format format, String napomena) throws IOException {
+<span class="fc" id="L164">        String sadrzaj = new String(procitajSigurno(nalaz.datoteka()), StandardCharsets.UTF_8);</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (format == Format.PDF) {</span>
+<span class="fc" id="L166">            byte[] pdf = PdfDokument.izradi(&quot;Nalaz: &quot; + nalaz.naziv(), sadrzaj.lines().toList());</span>
+<span class="fc" id="L167">            return ResponseEntity.ok()</span>
+<span class="fc" id="L168">                    .contentType(MediaType.APPLICATION_PDF)</span>
+<span class="fc" id="L169">                    .header(HttpHeaders.CONTENT_DISPOSITION, &quot;inline; filename=\&quot;nalaz-&quot; + nalaz.id() + &quot;.pdf\&quot;&quot;)</span>
+<span class="fc" id="L170">                    .body(pdf);</span>
+        }
+<span class="fc" id="L172">        Map&lt;String, Object&gt; tijelo = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L173">        tijelo.put(&quot;id&quot;, nalaz.id());</span>
+<span class="fc" id="L174">        tijelo.put(&quot;pacijent&quot;, nalaz.pacijent());</span>
+<span class="fc" id="L175">        tijelo.put(&quot;naziv&quot;, nalaz.naziv());</span>
+<span class="fc" id="L176">        tijelo.put(&quot;datoteka&quot;, nalaz.datoteka());</span>
+<span class="fc" id="L177">        tijelo.put(&quot;sadrzaj&quot;, sadrzaj);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (napomena != null) {</span>
+<span class="fc" id="L179">            tijelo.put(&quot;napomena&quot;, napomena);</span>
+        }
+<span class="fc" id="L181">        return ResponseEntity.ok(tijelo);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

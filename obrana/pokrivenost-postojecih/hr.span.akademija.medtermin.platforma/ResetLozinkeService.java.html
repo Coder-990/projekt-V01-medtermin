@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResetLozinkeService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">ResetLozinkeService.java</span></div><h1>ResetLozinkeService.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.security.SecureRandom;
+import java.util.Base64;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+/** Zaboravljena lozinka: token se šalje e-poštom, a njime se postavlja nova lozinka. */
+@Service
+public class ResetLozinkeService {
+
+    // SecureRandom se ponovno koristi; entropija tokena ostaje 32 nasumična bajta.
+<span class="fc" id="L21">    private final SecureRandom random = new SecureRandom();</span>
+    private final JdbcTemplate jdbc;
+    private final KorisnikService korisnici;
+    private final PostaService posta;
+
+<span class="fc" id="L26">    public ResetLozinkeService(JdbcTemplate jdbc, KorisnikService korisnici, PostaService posta) {</span>
+<span class="fc" id="L27">        this.jdbc = jdbc;</span>
+<span class="fc" id="L28">        this.korisnici = korisnici;</span>
+<span class="fc" id="L29">        this.posta = posta;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Transactional
+    public void zatrazi(String username) {
+<span class="fc" id="L34">        Optional&lt;KorisnikService.Korisnik&gt; korisnik = korisnici.pronadi(username);</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (korisnik.isEmpty()) {</span>
+<span class="fc" id="L36">            return;</span>
+        }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M03 [rucni pregled]: Token iz username + datum je predvidljiv; predlozen SecureRandom token visoke entropije i pohrana njegova hasha. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M03: Stari token izveden iz imena i datuma mogao se pogoditi. SecureRandom
+        // generira 32 bajta, a Base64 URL kodiranje pretvara ih u token za poveznicu.
+        // U bazi čuvamo samo SHA-256 sažetak, pa čitanje baze ne otkriva sam token.
+        // Prije spremanja opozivamo prethodne tokene korisnika i rok postavljamo na
+        // 15 minuta. Isporuka se obavlja postojećim lokalnim servisom PostaService.
+<span class="fc" id="L45">        byte[] bytes = new byte[32];</span>
+<span class="fc" id="L46">        random.nextBytes(bytes);</span>
+<span class="fc" id="L47">        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);</span>
+<span class="fc" id="L48">        jdbc.update(&quot;UPDATE reset_tokeni SET iskoristen = TRUE WHERE username = ?&quot;, username);</span>
+<span class="fc" id="L49">        jdbc.update(&quot;INSERT INTO reset_tokeni (username, token, istjece) VALUES (?, ?, ?)&quot;,</span>
+<span class="fc" id="L50">                username, sazetak(&quot;SHA-256&quot;, token), LocalDateTime.now().plusMinutes(15));</span>
+<span class="fc" id="L51">        posta.posaljiUputeZaLozinku(korisnik.get(), token);</span>
+<span class="fc" id="L52">    }</span>
+
+    @Transactional
+    public boolean postaviNovuLozinku(String token, String novaLozinka) {
+<span class="fc" id="L56">        KorisnikService.provjeriLozinku(novaLozinka);</span>
+<span class="fc bfc" id="L57" title="All 4 branches covered.">        if (token == null || token.isBlank()) {</span>
+<span class="fc" id="L58">            return false;</span>
+        }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M04 [rucni pregled]: Provjeriti istjece i iskoristen te atomski potrositi token; trenutan upit dopusta ponovnu uporabu bez isteka. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M04: Isti sažetak tražimo samo među neiskorištenim tokenima koji još vrijede.
+        // UPDATE istodobno označava token iskorištenim; samo zahtjev koji je promijenio
+        // točno jedan redak nastavlja na promjenu lozinke. Transakcija povezuje potrošnju
+        // i promjenu lozinke pa iznimka vraća promjene baze. U testu dva istodobna
+        // zahtjeva s istim tokenom završavaju jednim uspjehom i jednim odbijanjem.
+<span class="fc" id="L67">        String hash = sazetak(&quot;SHA-256&quot;, token.trim());</span>
+<span class="fc" id="L68">        int potroseno = jdbc.update(&quot;UPDATE reset_tokeni SET iskoristen = TRUE WHERE token = ? AND iskoristen = FALSE AND istjece &gt; ?&quot;,</span>
+<span class="fc" id="L69">                hash, LocalDateTime.now());</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (potroseno != 1) {</span>
+<span class="fc" id="L71">            return false;</span>
+        }
+<span class="fc" id="L73">        List&lt;String&gt; vlasnici = jdbc.queryForList(&quot;SELECT username FROM reset_tokeni WHERE token = ?&quot;, String.class, hash);</span>
+<span class="fc" id="L74">        korisnici.promijeniLozinku(vlasnici.get(0), novaLozinka);</span>
+<span class="fc" id="L75">        return true;</span>
+    }
+
+    private static String sazetak(String algoritam, String vrijednost) {
+        try {
+<span class="fc" id="L80">            MessageDigest md = MessageDigest.getInstance(algoritam);</span>
+<span class="fc" id="L81">            return HexFormat.of().formatHex(md.digest(vrijednost.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L82">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L83">            throw new IllegalStateException(algoritam + &quot; nije dostupan&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

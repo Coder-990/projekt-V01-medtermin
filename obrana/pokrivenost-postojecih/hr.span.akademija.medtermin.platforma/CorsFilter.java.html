@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CorsFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">CorsFilter.java</span></div><h1>CorsFilter.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * CORS za frontend aplikaciju (npr. Vite na {@code http://localhost:5173}) koja API poziva s kolačićem
+ * ili tokenom. Odgovara i na preflight zahtjeve ({@code OPTIONS}).
+ */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CorsFilter extends OncePerRequestFilter {
+
+    private static final String METODE = &quot;GET, POST, PUT, DELETE, OPTIONS&quot;;
+    private static final String ZAGLAVLJA = &quot;Authorization, Content-Type&quot;;
+
+    private final List&lt;String&gt; dopusteniOrigini;
+
+<span class="fc" id="L29">    public CorsFilter(AppProperties postavke) {</span>
+<span class="fc" id="L30">        this.dopusteniOrigini = postavke.dopusteniOrigini();</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="fc" id="L36">        String origin = request.getHeader(HttpHeaders.ORIGIN);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        boolean preflight = HttpMethod.OPTIONS.matches(request.getMethod())</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">                &amp;&amp; request.getHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD) != null;</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (origin == null) {</span>
+<span class="fc" id="L40">            chain.doFilter(request, response);</span>
+<span class="fc" id="L41">            return;</span>
+        }
+<span class="fc" id="L43">        response.addHeader(HttpHeaders.VARY, HttpHeaders.ORIGIN);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (dopusten(origin)) {</span>
+<span class="fc" id="L45">            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);</span>
+<span class="fc" id="L46">            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, &quot;true&quot;);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (preflight) {</span>
+<span class="fc" id="L48">                response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, METODE);</span>
+<span class="fc" id="L49">                response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ZAGLAVLJA);</span>
+<span class="fc" id="L50">                response.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, &quot;3600&quot;);</span>
+<span class="fc" id="L51">                response.setStatus(HttpServletResponse.SC_NO_CONTENT);</span>
+<span class="fc" id="L52">                return;</span>
+            }
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        } else if (preflight) {</span>
+<span class="fc" id="L55">            response.setStatus(HttpServletResponse.SC_FORBIDDEN);</span>
+<span class="fc" id="L56">            return;</span>
+        }
+<span class="fc" id="L58">        chain.doFilter(request, response);</span>
+<span class="fc" id="L59">    }</span>
+
+    private boolean dopusten(String origin) {
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M07 [rucni pregled]: Koristiti tocnu konfiguriranu allowlistu origin-a; sada su svi HTTP(S) origini dopusteni uz credentials. Iskoristivost ovisi i o cookie/SameSite pravilima. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M07: Prije su svi HTTP(S) origini dobivali CORS dozvolu s credentials.
+        // Sada uspoređujemo cijeli Origin s konfiguracijom app.cors.allowed-origins;
+        // podudaranje prefiksa ili proizvoljan HTTPS origin nisu dovoljni. Nepoznati
+        // preflight dobiva 403, a ostali zahtjevi ne dobivaju dopuštena CORS zaglavlja.
+        // Ne kopiramo kontrolne znakove u HTTP zaglavlje ni ako bi ih operater
+        // zabunom unio u konfiguraciju; SLF4J ili parametarsko postavljanje ne uklanja CR/LF.
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        return origin.chars().noneMatch(Character::isISOControl) &amp;&amp; dopusteniOrigini.contains(origin);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

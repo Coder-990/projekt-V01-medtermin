@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IspisController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.rezervacije</a> &gt; <span class="el_source">IspisController.java</span></div><h1>IspisController.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.rezervacije;
+
+import hr.span.akademija.medtermin.platforma.ApiException;
+import hr.span.akademija.medtermin.platforma.AppProperties;
+import hr.span.akademija.medtermin.platforma.Html;
+import hr.span.akademija.medtermin.platforma.PrijavljeniKorisnik;
+import hr.span.akademija.medtermin.rezervacije.RezervacijaService.Rezervacija;
+import java.time.format.DateTimeFormatter;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.util.HtmlUtils;
+
+/** Potvrda rezervacije za ispis (HTML). */
+@Controller
+public class IspisController {
+
+<span class="fc" id="L19">    private static final DateTimeFormatter VRIJEME = DateTimeFormatter.ofPattern(&quot;dd.MM.yyyy. 'u' HH:mm&quot;);</span>
+
+    private final RezervacijaService rezervacije;
+    private final AppProperties postavke;
+
+<span class="fc" id="L24">    public IspisController(RezervacijaService rezervacije, AppProperties postavke) {</span>
+<span class="fc" id="L25">        this.rezervacije = rezervacije;</span>
+<span class="fc" id="L26">        this.postavke = postavke;</span>
+<span class="fc" id="L27">    }</span>
+
+    @GetMapping(&quot;/ispis/rezervacije/{id}&quot;)
+    public ResponseEntity&lt;String&gt; potvrda(@PathVariable long id, PrijavljeniKorisnik korisnik) {
+<span class="fc" id="L31">        Rezervacija r = rezervacije.pronadi(id)</span>
+<span class="fc bfc" id="L32" title="All 4 branches covered.">                .filter(x -&gt; korisnik.isAdmin() || x.pacijent().equals(korisnik.username()))</span>
+<span class="fc" id="L33">                .orElseThrow(() -&gt; ApiException.nijePronadeno(&quot;Rezervacija nije pronađena.&quot;));</span>
+<span class="fc" id="L34">        String html = &quot;&quot;&quot;</span>
+                &lt;!DOCTYPE html&gt;%n\
+                &lt;html lang=&quot;hr&quot;&gt;%n\
+                &lt;head&gt;%n\
+                &lt;meta charset=&quot;UTF-8&quot;&gt;%n\
+                &lt;title&gt;Potvrda rezervacije br. %d&lt;/title&gt;%n\
+                &lt;style&gt;%n\
+                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; }%n\
+                dt { font-weight: bold; margin-top: .5rem; }%n\
+                &lt;/style&gt;%n\
+                &lt;/head&gt;%n\
+                &lt;body&gt;%n\
+                &lt;h1&gt;%s&lt;/h1&gt;%n\
+                &lt;h2&gt;Potvrda rezervacije br. %d&lt;/h2&gt;%n\
+                &lt;dl&gt;%n\
+                &lt;dt&gt;Pacijent&lt;/dt&gt;&lt;dd&gt;%s&lt;/dd&gt;%n\
+                &lt;dt&gt;Liječnik&lt;/dt&gt;&lt;dd&gt;%s&lt;/dd&gt;%n\
+                &lt;dt&gt;Termin&lt;/dt&gt;&lt;dd&gt;%s&lt;/dd&gt;%n\
+                &lt;dt&gt;Napomena&lt;/dt&gt;&lt;dd&gt;%s&lt;/dd&gt;%n\
+                &lt;/dl&gt;%n\
+                &lt;p&gt;Molimo dođite 10 minuta prije termina i ponesite iskaznicu zdravstvenog osiguranja.&lt;/p&gt;%n\
+                &lt;/body&gt;%n\
+                &lt;/html&gt;%n\
+<span class="fc" id="L57">                &quot;&quot;&quot;.formatted(r.id(), tekst(postavke.naziv()), r.id(), tekst(r.pacijent()), tekst(r.lijecnik()),</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                r.pocetak() == null ? &quot;&quot; : VRIJEME.format(r.pocetak()), tekst(r.napomena()));</span>
+<span class="fc" id="L59">        return ResponseEntity.ok()</span>
+<span class="fc" id="L60">                .contentType(Html.TEXT_HTML_UTF8)</span>
+<span class="fc" id="L61">                .header(&quot;Content-Security-Policy&quot;, &quot;default-src 'none'; style-src 'unsafe-inline'&quot;)</span>
+<span class="fc" id="L62">                .body(html);</span>
+    }
+
+    private static String tekst(String vrijednost) {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        return vrijednost == null ? &quot;&quot; : HtmlUtils.htmlEscape(vrijednost, &quot;UTF-8&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Html.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">Html.java</span></div><h1>Html.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.nio.charset.StandardCharsets;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.HtmlUtils;
+
+/** Jednostavne HTML stranice (početna, prijava, promjena lozinke). */
+public final class Html {
+
+<span class="fc" id="L11">    public static final MediaType TEXT_HTML_UTF8 = new MediaType(&quot;text&quot;, &quot;html&quot;, StandardCharsets.UTF_8);</span>
+
+    private Html() {
+    }
+
+    public static String escape(String tekst) {
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        return tekst == null ? &quot;&quot; : HtmlUtils.htmlEscape(tekst, &quot;UTF-8&quot;);</span>
+    }
+
+    public static String stranica(String naslov, String tijelo) {
+<span class="fc" id="L21">        return &quot;&quot;&quot;</span>
+                &lt;!DOCTYPE html&gt;%n\
+                &lt;html lang=&quot;hr&quot;&gt;%n\
+                &lt;head&gt;%n\
+                &lt;meta charset=&quot;UTF-8&quot;&gt;%n\
+                &lt;title&gt;%s&lt;/title&gt;%n\
+                &lt;style&gt;%n\
+                body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }%n\
+                label { display: block; margin-top: .75rem; }%n\
+                .poruka { color: #b00020; }%n\
+                &lt;/style&gt;%n\
+                &lt;/head&gt;%n\
+                &lt;body&gt;%n\
+                %s%n\
+                &lt;/body&gt;%n\
+                &lt;/html&gt;%n\
+<span class="fc" id="L37">                &quot;&quot;&quot;.formatted(escape(naslov), tijelo);</span>
+    }
+
+    public static ResponseEntity&lt;String&gt; odgovor(String html) {
+        // CSP ograničava učitavanje vanjskih sadržaja i slanje obrazaca na vlastiti
+        // origin; inline stil je potreban postojećim stranicama bez JavaScripta.
+<span class="fc" id="L43">        return ResponseEntity.ok().contentType(TEXT_HTML_UTF8)</span>
+<span class="fc" id="L44">                .header(&quot;Content-Security-Policy&quot;, &quot;default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'&quot;)</span>
+<span class="fc" id="L45">                .body(html);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

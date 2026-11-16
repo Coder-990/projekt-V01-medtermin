@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">TokenStore.java</span></div><h1>TokenStore.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TokenStore {
+<span class="fc" id="L14">    private record Sesija(PrijavljeniKorisnik korisnik, Instant istjece) { }</span>
+<span class="fc" id="L15">    private final SecureRandom random = new SecureRandom();</span>
+<span class="fc" id="L16">    private final Map&lt;String, Sesija&gt; tokeni = new HashMap&lt;&gt;();</span>
+    // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+    // TODO(sec): M09 [rucni pregled]: Tokeni nemaju rok ni opoziv; predloziti TTL, ogranicenje pohrane i opoziv pri odjavi/promjeni lozinke. SecureRandom generiranje je dobro. Izvor/detalji: alati/poslije/pregled-koda.md.
+    // M09: Ranije se tokeni nisu automatski uklanjali ni opozivali. Svaka nova
+    // sesija sada traje najviše osam sati, a pohrana dopušta najviše 10 000 tokena.
+    // Istekle sesije čiste se pri izdavanju i odbijaju pri provjeri. Pohrana je
+    // memorijska: ponovnim pokretanjem aplikacije sve se sesije gube.
+<span class="fc" id="L23">    private static final Duration TRAJANJE = Duration.ofHours(8);</span>
+    private static final int MAKSIMUM = 10000;
+    private final Clock clock;
+
+<span class="fc" id="L27">    public TokenStore() { this(Clock.systemUTC()); }</span>
+<span class="fc" id="L28">    TokenStore(Clock clock) { this.clock = clock; }</span>
+
+    public synchronized String izdaj(PrijavljeniKorisnik korisnik) {
+<span class="fc" id="L31">        Instant sada = clock.instant();</span>
+        // M09: Prije izdavanja čistimo istekle sesije kako ne bi zauzimale ograničenu pohranu.
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        tokeni.values().removeIf(s -&gt; !s.istjece().isAfter(sada));</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (tokeni.size() &gt;= MAKSIMUM) throw new IllegalStateException(&quot;Dosegnut je maksimalan broj sesija.&quot;);</span>
+<span class="fc" id="L35">        byte[] bajtovi = new byte[32];</span>
+<span class="fc" id="L36">        random.nextBytes(bajtovi);</span>
+<span class="fc" id="L37">        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bajtovi);</span>
+<span class="fc" id="L38">        tokeni.put(token, new Sesija(korisnik, sada.plus(TRAJANJE)));</span>
+<span class="fc" id="L39">        return token;</span>
+    }
+
+    // M09: Istekli token više ne autentificira i uklanja se iz memorije.
+    public synchronized PrijavljeniKorisnik korisnik(String token) {
+<span class="fc" id="L44">        Sesija s = tokeni.get(token);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (s == null) return null;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (!s.istjece().isAfter(clock.instant())) { tokeni.remove(token); return null; }</span>
+<span class="fc" id="L47">        return s.korisnik();</span>
+    }
+
+    // M09: Odjava opoziva jednu sesiju; promjena lozinke opoziva sve korisnikove sesije.
+<span class="nc" id="L51">    public synchronized void opozovi(String token) { tokeni.remove(token); }</span>
+    public synchronized void opozoviKorisnika(String username) {
+<span class="fc" id="L53">        tokeni.values().removeIf(s -&gt; s.korisnik().username().equals(username));</span>
+<span class="fc" id="L54">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

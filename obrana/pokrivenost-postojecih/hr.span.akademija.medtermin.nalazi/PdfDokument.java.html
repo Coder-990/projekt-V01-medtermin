@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfDokument.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.nalazi</a> &gt; <span class="el_source">PdfDokument.java</span></div><h1>PdfDokument.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.nalazi;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+
+/** Izrada jednostavnog jednostraničnog PDF dokumenta s tekstom (bez vanjskih biblioteka). */
+public final class PdfDokument {
+
+    private PdfDokument() {
+    }
+
+    public static byte[] izradi(String naslov, List&lt;String&gt; retci) {
+<span class="fc" id="L16">        StringBuilder sadrzaj = new StringBuilder();</span>
+<span class="fc" id="L17">        sadrzaj.append(&quot;BT\n/F1 16 Tf\n50 790 Td\n18 TL\n(&quot;).append(tekst(naslov)).append(&quot;) Tj\nT*\n/F1 11 Tf\n14 TL\n&quot;);</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        for (String redak : retci) {</span>
+<span class="fc" id="L19">            sadrzaj.append(&quot;T*\n(&quot;).append(tekst(redak)).append(&quot;) Tj\n&quot;);</span>
+<span class="fc" id="L20">        }</span>
+<span class="fc" id="L21">        sadrzaj.append(&quot;ET&quot;);</span>
+<span class="fc" id="L22">        String tok = sadrzaj.toString();</span>
+
+<span class="fc" id="L24">        List&lt;String&gt; objekti = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L25">        objekti.add(&quot;&lt;&lt; /Type /Catalog /Pages 2 0 R &gt;&gt;&quot;);</span>
+<span class="fc" id="L26">        objekti.add(&quot;&lt;&lt; /Type /Pages /Kids [3 0 R] /Count 1 &gt;&gt;&quot;);</span>
+<span class="fc" id="L27">        objekti.add(&quot;&lt;&lt; /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] &quot;</span>
+                + &quot;/Resources &lt;&lt; /Font &lt;&lt; /F1 4 0 R &gt;&gt; &gt;&gt; /Contents 5 0 R &gt;&gt;&quot;);
+<span class="fc" id="L29">        objekti.add(&quot;&lt;&lt; /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding &gt;&gt;&quot;);</span>
+<span class="fc" id="L30">        objekti.add(&quot;&lt;&lt; /Length &quot; + tok.getBytes(StandardCharsets.US_ASCII).length + &quot; &gt;&gt;\nstream\n&quot; + tok</span>
+                + &quot;\nendstream&quot;);
+
+<span class="fc" id="L33">        ByteArrayOutputStream izlaz = new ByteArrayOutputStream();</span>
+<span class="fc" id="L34">        zapisi(izlaz, &quot;%PDF-1.4\n&quot;);</span>
+<span class="fc" id="L35">        List&lt;Integer&gt; pomaci = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        for (int i = 0; i &lt; objekti.size(); i++) {</span>
+<span class="fc" id="L37">            pomaci.add(izlaz.size());</span>
+<span class="fc" id="L38">            zapisi(izlaz, (i + 1) + &quot; 0 obj\n&quot; + objekti.get(i) + &quot;\nendobj\n&quot;);</span>
+        }
+<span class="fc" id="L40">        int xref = izlaz.size();</span>
+<span class="fc" id="L41">        StringBuilder tablica = new StringBuilder();</span>
+<span class="fc" id="L42">        tablica.append(&quot;xref\n0 &quot;).append(objekti.size() + 1).append('\n');</span>
+<span class="fc" id="L43">        tablica.append(&quot;0000000000 65535 f \n&quot;);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (int pomak : pomaci) {</span>
+<span class="fc" id="L45">            tablica.append(String.format(java.util.Locale.ROOT, &quot;%010d 00000 n &quot;, pomak)).append('\n');</span>
+<span class="fc" id="L46">        }</span>
+<span class="fc" id="L47">        tablica.append(&quot;trailer\n&lt;&lt; /Size &quot;).append(objekti.size() + 1).append(&quot; /Root 1 0 R &gt;&gt;\n&quot;);</span>
+<span class="fc" id="L48">        tablica.append(&quot;startxref\n&quot;).append(xref).append(&quot;\n%%EOF\n&quot;);</span>
+<span class="fc" id="L49">        zapisi(izlaz, tablica.toString());</span>
+<span class="fc" id="L50">        return izlaz.toByteArray();</span>
+    }
+
+    private static void zapisi(ByteArrayOutputStream izlaz, String tekst) {
+<span class="fc" id="L54">        izlaz.writeBytes(tekst.getBytes(StandardCharsets.US_ASCII));</span>
+<span class="fc" id="L55">    }</span>
+
+    /** Standardni PDF font nema sva hrvatska slova pa se dijakritici uklanjaju. */
+    private static String tekst(String vrijednost) {
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        String bez = Normalizer.normalize(vrijednost == null ? &quot;&quot; : vrijednost, Normalizer.Form.NFD)</span>
+<span class="fc" id="L60">                .replaceAll(&quot;\\p{M}&quot;, &quot;&quot;)</span>
+<span class="fc" id="L61">                .replace('đ', 'd').replace('Đ', 'D')</span>
+<span class="fc" id="L62">                .replace('–', '-').replace('—', '-');</span>
+<span class="fc" id="L63">        StringBuilder rezultat = new StringBuilder();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (char c : bez.toCharArray()) {</span>
+<span class="pc bpc" id="L65" title="1 of 6 branches missed.">            if (c == '(' || c == ')' || c == '\\') {</span>
+<span class="fc" id="L66">                rezultat.append('\\').append(c);</span>
+<span class="pc bpc" id="L67" title="2 of 4 branches missed.">            } else if (c &gt;= 32 &amp;&amp; c &lt; 127) {</span>
+<span class="fc" id="L68">                rezultat.append(c);</span>
+            } else {
+<span class="nc" id="L70">                rezultat.append('?');</span>
+            }
+        }
+<span class="fc" id="L73">        return rezultat.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

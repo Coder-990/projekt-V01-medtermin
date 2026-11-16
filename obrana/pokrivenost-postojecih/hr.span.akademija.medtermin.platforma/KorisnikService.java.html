@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KorisnikService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MedTermin</a> &gt; <a href="index.source.html" class="el_package">hr.span.akademija.medtermin.platforma</a> &gt; <span class="el_source">KorisnikService.java</span></div><h1>KorisnikService.java</h1><pre class="source lang-java linenums">package hr.span.akademija.medtermin.platforma;
+
+import java.util.Optional;
+import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Service;
+
+/** Korisnički računi: prijava, registracija i promjena lozinke. */
+@Service
+public class KorisnikService {
+
+<span class="fc" id="L17">    private static final Logger log = LoggerFactory.getLogger(KorisnikService.class);</span>
+<span class="fc" id="L18">    private static final Pattern KORISNICKO_IME = Pattern.compile(&quot;[A-Za-z0-9._-]{3,50}&quot;);</span>
+    public static final int MIN_DULJINA_LOZINKE = 8;
+
+<span class="fc" id="L21">    private static final RowMapper&lt;Korisnik&gt; MAPPER = (rs, i) -&gt; new Korisnik(</span>
+<span class="fc" id="L22">            rs.getLong(&quot;id&quot;), rs.getString(&quot;username&quot;), rs.getString(&quot;password_hash&quot;), rs.getString(&quot;email&quot;),</span>
+<span class="fc" id="L23">            rs.getString(&quot;ime&quot;), rs.getString(&quot;prezime&quot;), rs.getString(&quot;uloga&quot;), rs.getString(&quot;oib&quot;));</span>
+
+    private final JdbcTemplate jdbc;
+    private final LozinkaHasher hasher;
+    // M09: Zajednička pohrana omogućuje opoziv svih sesija nakon promjene lozinke.
+    private TokenStore tokeni;
+
+    @org.springframework.beans.factory.annotation.Autowired
+<span class="fc" id="L31">    void postaviTokenStore(TokenStore tokeni) { this.tokeni = tokeni; }</span>
+
+<span class="fc" id="L33">    public KorisnikService(JdbcTemplate jdbc, LozinkaHasher hasher) {</span>
+<span class="fc" id="L34">        this.jdbc = jdbc;</span>
+<span class="fc" id="L35">        this.hasher = hasher;</span>
+<span class="fc" id="L36">    }</span>
+
+<span class="fc" id="L38">    public record Korisnik(long id, String username, String passwordHash, String email, String ime,</span>
+                           String prezime, String uloga, String oib) {
+
+        public PrijavljeniKorisnik prijavljeni() {
+<span class="fc" id="L42">            return new PrijavljeniKorisnik(id, username, uloga);</span>
+        }
+    }
+
+<span class="fc" id="L46">    public record PrijavaZahtjev(String username, String password) {</span>
+    }
+
+<span class="fc" id="L49">    public record RegistracijaZahtjev(String username, String password, String email, String ime, String prezime) {</span>
+    }
+
+    public Optional&lt;Korisnik&gt; pronadi(String username) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (username == null) {</span>
+<span class="nc" id="L54">            return Optional.empty();</span>
+        }
+<span class="fc" id="L56">        return jdbc.query(&quot;SELECT id, username, password_hash, email, ime, prezime, uloga, oib &quot;</span>
+<span class="fc" id="L57">                + &quot;FROM korisnici WHERE username = ?&quot;, MAPPER, username).stream().findFirst();</span>
+    }
+
+    public Optional&lt;Korisnik&gt; prijava(PrijavaZahtjev zahtjev) {
+<span class="pc bpc" id="L61" title="2 of 6 branches missed.">        if (zahtjev == null || zahtjev.username() == null || zahtjev.password() == null) {</span>
+<span class="fc" id="L62">            return Optional.empty();</span>
+        }
+        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
+        // TODO(sec): M06 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Record zahtjev ispisuje i password u cistom tekstu; ukloniti tajne iz logova i sprijeciti CR/LF injekciju. Izvor/detalji: alati/poslije/pregled-koda.md.
+        // M06: Record zahtjeva sadrži lozinku i korisničko ime koje može sadržavati
+        // kontrolne znakove. Zapisujemo samo događaj prijave bez tih vrijednosti;
+        // time ne izlažemo lozinku i ne dopuštamo lažne retke u ovom logu.
+<span class="fc" id="L69">        log.info(&quot;Zahtjev za prijavu&quot;);</span>
+<span class="fc" id="L70">        Optional&lt;Korisnik&gt; korisnik = pronadi(zahtjev.username())</span>
+<span class="fc" id="L71">                .filter(k -&gt; hasher.provjeri(zahtjev.password(), k.passwordHash()));</span>
+        // M05: Tek nakon ispravne lozinke stari SHA-256 zamjenjujemo BCrypt zapisom.
+        // Uvjet WHERE uključuje stari hash kako migracija ne bi prepisala lozinku
+        // promijenjenu u međuvremenu. Lozinku dulju od 72 UTF-8 bajta ne migriramo
+        // automatski jer BCrypt ima tu granicu; korisnik je mora promijeniti.
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        korisnik.filter(k -&gt; k.passwordHash().matches(&quot;[0-9a-f]{64}&quot;)</span>
+<span class="pc bnc" id="L77" title="All 2 branches missed.">                &amp;&amp; zahtjev.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length &lt;= 72).ifPresent(k -&gt;</span>
+<span class="nc" id="L78">                jdbc.update(&quot;UPDATE korisnici SET password_hash = ? WHERE id = ? AND password_hash = ?&quot;,</span>
+<span class="nc" id="L79">                        hasher.hash(zahtjev.password()), k.id(), k.passwordHash()));</span>
+<span class="fc" id="L80">        return korisnik;</span>
+    }
+
+    public Korisnik registriraj(RegistracijaZahtjev zahtjev) {
+<span class="pc bpc" id="L84" title="2 of 6 branches missed.">        if (zahtjev == null || zahtjev.username() == null || !KORISNICKO_IME.matcher(zahtjev.username()).matches()) {</span>
+<span class="fc" id="L85">            throw ApiException.neispravno(&quot;Korisničko ime mora imati 3–50 znakova (slova, brojke, točka, crtica).&quot;);</span>
+        }
+<span class="fc" id="L87">        provjeriLozinku(zahtjev.password());</span>
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">        if (zahtjev.email() == null || !zahtjev.email().contains(&quot;@&quot;)) {</span>
+<span class="fc" id="L89">            throw ApiException.neispravno(&quot;Neispravna adresa e-pošte.&quot;);</span>
+        }
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (pronadi(zahtjev.username()).isPresent()) {</span>
+<span class="fc" id="L92">            throw new ApiException(HttpStatus.CONFLICT, &quot;Korisničko ime je zauzeto.&quot;);</span>
+        }
+        try {
+<span class="fc" id="L95">            kreiraj(zahtjev.username(), zahtjev.password(), zahtjev.email(), zahtjev.ime(), zahtjev.prezime(),</span>
+                    &quot;KORISNIK&quot;, null);
+<span class="nc" id="L97">        } catch (DuplicateKeyException e) {</span>
+<span class="nc" id="L98">            throw new ApiException(HttpStatus.CONFLICT, &quot;Korisničko ime je zauzeto.&quot;);</span>
+<span class="fc" id="L99">        }</span>
+<span class="fc" id="L100">        log.info(&quot;Registriran novi korisnik {}&quot;, zahtjev.username());</span>
+<span class="fc" id="L101">        return pronadi(zahtjev.username()).orElseThrow();</span>
+    }
+
+    public long kreiraj(String username, String lozinka, String email, String ime, String prezime, String uloga,
+                        String oib) {
+<span class="fc" id="L106">        return JdbcPomoc.umetni(jdbc,</span>
+                &quot;INSERT INTO korisnici (username, password_hash, email, ime, prezime, uloga, oib) &quot;
+                        + &quot;VALUES (?, ?, ?, ?, ?, ?, ?)&quot;,
+<span class="fc" id="L109">                username, hasher.hash(lozinka), email, ime, prezime, uloga, oib);</span>
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void promijeniLozinku(String username, String novaLozinka) {
+<span class="fc" id="L114">        provjeriLozinku(novaLozinka);</span>
+<span class="fc" id="L115">        jdbc.update(&quot;UPDATE korisnici SET password_hash = ? WHERE username = ?&quot;, hasher.hash(novaLozinka), username);</span>
+        // M03/M04: Promjena lozinke poništava i ostale ranije izdane reset tokene;
+        // u istoj su transakciji s promjenom hasha, kako stari link ne bi ostao valjan.
+<span class="fc" id="L118">        jdbc.update(&quot;UPDATE reset_tokeni SET iskoristen = TRUE WHERE username = ? AND iskoristen = FALSE&quot;, username);</span>
+        // M09: Promjena ili reset lozinke opoziva sve postojeće sesije korisnika.
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (tokeni != null) tokeni.opozoviKorisnika(username);</span>
+<span class="fc" id="L121">        log.info(&quot;Promijenjena lozinka&quot;);</span>
+<span class="fc" id="L122">    }</span>
+
+    // M05: Ograničenje na 72 UTF-8 bajta sprječava da BCrypt prihvati samo početak duže lozinke.
+    public static void provjeriLozinku(String lozinka) {
+<span class="pc bpc" id="L126" title="2 of 6 branches missed.">        if (lozinka == null || lozinka.length() &lt; MIN_DULJINA_LOZINKE || lozinka.getBytes(java.nio.charset.StandardCharsets.UTF_8).length &gt; 72) {</span>
+<span class="fc" id="L127">            throw ApiException.neispravno(&quot;Lozinka mora imati najmanje &quot; + MIN_DULJINA_LOZINKE + &quot; znakova.&quot;);</span>
+        }
+<span class="fc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>
