@@ -45,23 +45,49 @@ printf 'Mapa izvorne verzije: %s\n' "$OBRANA_PRIJE"
 
 ### 1. Stara verzija: port 8081
 
-1. Otvori [obrana.http](obrana.http), postavi `@host = http://localhost:8081` i pokreni **1. Prijava Ane**. U terminalu 2 možeš vidjeti testnu lozinku u starom logu.
-2. **2. Anin nalaz:** očekuj **200**. **3. Markov nalaz:** očekuj **200** i Markove podatke. Ana ne bi smjela vidjeti njegov nalaz.
-3. **4. Valjano sortiranje:** očekuj **200**. **5. SQL izraz:** također **200** — stari kod prihvaća izraz u sortiranju. Primjer ne mijenja podatke.
-4. **6. CORS preflight:** očekuj **204** i zaglavlje `Access-Control-Allow-Origin` za nepoznati origin.
-5. Po želji pokreni **7. Prijava liječnika** i **8. Potvrda identiteta**: očekuj **200** i ulogu `LIJECNIK`.
-6. Otvori [obrana-dodatno.http](obrana-dodatno.http), postavi `@host = http://localhost:8081`, pokreni **1. Prijava Ane**, pa **2. YAML**: očekuj **200**. Oznaka u primjeru je bezopasna i ne otvara mrežnu vezu.
-7. **Ako ima vremena — lozinka i reset:** pokreni **3. Registracija**, pa **4. Prijava** i pogledaj terminal 2: u logu se vidi testna lozinka. Zatim pokreni **5. Zatraži reset**. U mapi `data/posta` unutar mape ispisane u terminalu 2 pronađi najnoviju poruku za registriranog korisnika i kopiraj vrijednost nakon `Token:` u `@resetToken` na vrhu HTTP datoteke. Pokreni **6. Prvo korištenje** i **7. Ponovno korištenje ISTOG tokena**: očekuj **200 oba puta**.
+**U [obrana.http](obrana.http) postavi `@host = http://localhost:8081`. Brojevi ispod odgovaraju brojevima zahtjeva u toj datoteci.**
+
+1. **Prijava Ane:** očekuj **200**. U terminalu 2 možeš vidjeti testnu lozinku u starom logu.
+2. **Anin nalaz:** očekuj **200**.
+3. **Markov nalaz:** očekuj **200** i Markove podatke. Ana ne bi smjela vidjeti njegov nalaz.
+4. **Valjano sortiranje:** očekuj **200**.
+5. **SQL izraz:** očekuj **200** — stari kod prihvaća izraz u sortiranju. Primjer ne mijenja podatke.
+6. **CORS preflight:** očekuj **204** i zaglavlje `Access-Control-Allow-Origin` za nepoznati origin.
+7. **Prijava liječnika (po želji):** očekuj **200**.
+8. **Potvrda identiteta (ako si pokrenuo 7):** očekuj **200** i ulogu `LIJECNIK`.
+
+**Zatim u [obrana-dodatno.http](obrana-dodatno.http) postavi `@host = http://localhost:8081`. Numeracija ponovno kreće od 1 jer je to druga HTTP datoteka.**
+
+1. **Prijava Ane:** očekuj **200**; sprema token za YAML primjer.
+2. **YAML:** očekuj **200**. Oznaka u primjeru je bezopasna i ne otvara mrežnu vezu.
+3. **Registracija (ako ima vremena za lozinku i reset):** očekuj **201**; stvara novi testni račun za sljedeće korake.
+4. **Prijava:** očekuj **200**. Pogledaj terminal 2: u logu se vidi testna lozinka.
+5. **Zatraži reset:** očekuj **202**. U mapi `data/posta` unutar mape ispisane u terminalu 2 pronađi najnoviju poruku za registriranog korisnika. Kopiraj vrijednost nakon `Token:` u `@resetToken` na vrhu HTTP datoteke.
+6. **Prvo korištenje:** očekuj **200**.
+7. **Ponovno korištenje ISTOG tokena:** očekuj **200** — token se može ponovno upotrijebiti.
 
 ### 2. Popravljena verzija: port 8080
 
-1. Vrati se u [obrana.http](obrana.http), postavi `@host = http://localhost:8080` i ponovno pokreni **1. Prijava Ane**: svaka aplikacija ima svoj token. U terminalu 1 vidiš da se lozinka više ne zapisuje.
-2. **2. Anin nalaz:** **200**. **3. Markov nalaz:** **404**. Reci: „Prije je Ana mogla vidjeti Markov nalaz zbog nevaljanog formata; sada prvo provjeravam vlasnika.”
-3. **4. Valjano sortiranje:** **200**. **5. SQL izraz:** **400**. Reci: „Sada prihvaćam samo dopuštene stupce i smjerove.”
-4. **6. CORS preflight:** **403**. Reci: „Nepoznati origin više nije dopušten.”
-5. Ako si pokazao liječnika, ponovno pokreni **7. Prijava liječnika** i **8. Potvrda identiteta**: **200** i `LIJECNIK` — njegova prijava i dalje radi.
-6. U [obrana-dodatno.http](obrana-dodatno.http) postavi `@host = http://localhost:8080`, ponovno pokreni **1. Prijava Ane**, pa **2. YAML**: **400**. Reci: „Sigurni parser odbija Java oznaku.” Sam status ne dokazuje izvođenje koda; poziv konstruktora posebno je provjeren testom.
-7. **Ako si pokazao lozinku i reset:** ponovno pokreni **3. Registracija** i **4. Prijava**, pa pogledaj terminal 1: lozinka se ne zapisuje. Pokreni **5. Zatraži reset**, pronađi novu poruku u mapi pošte ispisanoj u terminalu 1 i njezin token kopiraj u `@resetToken`. Pokreni **6. Prvo korištenje**: **200**, pa **7. Ponovno korištenje ISTOG tokena**: **400**. Reci: „Token je sada jednokratan i ima rok trajanja.”
+**Vrati se u [obrana.http](obrana.http) i postavi `@host = http://localhost:8080`. Ponovno se prijavi jer svaka aplikacija ima svoj token.**
+
+1. **Prijava Ane:** očekuj **200**. U terminalu 1 vidiš da se lozinka više ne zapisuje.
+2. **Anin nalaz:** očekuj **200**.
+3. **Markov nalaz:** očekuj **404**. Reci: „Prije je Ana mogla vidjeti Markov nalaz zbog nevaljanog formata; sada prvo provjeravam vlasnika.”
+4. **Valjano sortiranje:** očekuj **200**.
+5. **SQL izraz:** očekuj **400**. Reci: „Sada prihvaćam samo dopuštene stupce i smjerove.”
+6. **CORS preflight:** očekuj **403**. Reci: „Nepoznati origin više nije dopušten.”
+7. **Prijava liječnika (ako si je pokazao prije):** očekuj **200**.
+8. **Potvrda identiteta (ako si pokrenuo 7):** očekuj **200** i `LIJECNIK` — njegova prijava i dalje radi.
+
+**Zatim u [obrana-dodatno.http](obrana-dodatno.http) postavi `@host = http://localhost:8080`. Ponovno krećeš od zahtjeva 1.**
+
+1. **Prijava Ane:** očekuj **200**; sprema token ove instance za YAML primjer.
+2. **YAML:** očekuj **400**. Reci: „Sigurni parser odbija Java oznaku.” Sam status ne dokazuje izvođenje koda; poziv konstruktora posebno je provjeren [testom](testovi-i-promjene.md#redoslijed-demonstracije).
+3. **Registracija (ako si pokazao lozinku i reset):** očekuj **201**; stvara testni račun u ovoj instanci.
+4. **Prijava:** očekuj **200**. Pogledaj terminal 1: lozinka se ne zapisuje.
+5. **Zatraži reset:** očekuj **202**. Pronađi novu poruku u mapi pošte ispisanoj u terminalu 1 i njezin token kopiraj u `@resetToken`.
+6. **Prvo korištenje:** očekuj **200**.
+7. **Ponovno korištenje ISTOG tokena:** očekuj **400**. Reci: „Token je sada jednokratan i ima rok trajanja.”
 
 - [Kod i testovi za primjere](testovi-i-promjene.md#sigurnosni-popravci-napad-promjena-i-test).
 - Kada završiš, zaustavi obje aplikacije s `Ctrl+C`.

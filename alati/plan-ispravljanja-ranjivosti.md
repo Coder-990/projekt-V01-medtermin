@@ -33,7 +33,7 @@ Za svaki korak prvo dodati regresijski test očekivanog sigurnog ponašanja koji
 **Prioritet: visok.**
 
 - **Mjesto / TODO:** [LijecnikController.java](../src/main/java/hr/span/akademija/medtermin/lijecnici/LijecnikController.java), `popis`, M11 i postojeći Semgrep komentari.
-- **Izvori:** [Semgrep SARIF](usredIspravka/semgrep-java.sarif), pravila `tainted-sql-string` i `spring-sqli`; [FindSecBugs](usredIspravka/spotbugs-java.txt), `SQL_INJECTION_SPRING_JDBC`; ručna provjera toka podataka.
+- **Izvori:** [Semgrep SARIF](prije/semgrep-java.sarif), pravila `tainted-sql-string` i `spring-sqli`; [FindSecBugs](prije/spotbugs-java.txt), `SQL_INJECTION_SPRING_JDBC`; ručna provjera toka podataka.
 - **Popravak:** mapirati dopuštene vrijednosti na poznate SQL stupce i strogo ograničiti smjer na `ASC`/`DESC`. SQL identifikatori ne zamjenjuju se običnim bind parametrom `?`.
 - **Uvjet zatvaranja:** sva podržana sortiranja rade; nepoznati stupci, smjerovi i SQL fragmenti odbijaju se bez izvršavanja proizvoljnog SQL-a.
 
@@ -42,7 +42,7 @@ Za svaki korak prvo dodati regresijski test očekivanog sigurnog ponašanja koji
 **Prioritet: visok za lozinke. Ovaj mali zahvat može teći paralelno s koracima 1–3.**
 
 - **Mjesta / TODO:** [KorisnikService.java](../src/main/java/hr/span/akademija/medtermin/platforma/KorisnikService.java), `prijava` (M06); [RezervacijaService.java](../src/main/java/hr/span/akademija/medtermin/rezervacije/RezervacijaService.java), `kreiraj` (M12).
-- **Izvori:** ručni pregled potvrđuje logiranje recorda s lozinkom odnosno OIB-om i napomenom. [FindSecBugs](usredIspravka/spotbugs-java.txt) na tim mjestima upozorava na `CRLF_INJECTION_LOGS`.
+- **Izvori:** ručni pregled potvrđuje logiranje recorda s lozinkom odnosno OIB-om i napomenom. [FindSecBugs](prije/spotbugs-java.txt) na tim mjestima upozorava na `CRLF_INJECTION_LOGS`.
 - **Popravak:** ukloniti tajne i nepotrebne osobne podatke, logirati minimalne identifikatore događaja te sigurno obraditi kontrolne znakove. Parametrizirani SLF4J sam ne uklanja CR/LF.
 - **Uvjet zatvaranja:** logovi uspješne i neuspješne prijave ne sadrže lozinku; rezervacije ne zapisuju OIB ni slobodnu napomenu; korisnički unos ne stvara lažne log zapise.
 - **Ako je aplikacija već korištena:** pregledati pristup i zadržavanje starih logova te procijeniti potrebu promjene izloženih lozinki.

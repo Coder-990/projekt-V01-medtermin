@@ -27,7 +27,7 @@ Content-Type: application/json
 # Prije: HTTP 200; izvorni parser stvara URL objekt i zanemaruje nepoznato polje.
 # Poslije: HTTP 400; SafeConstructor odbija Java oznaku.
 # Primjer ne otvara URL niti kontaktira mrežu. Uputa za dokaz poziva konstruktora
-# bezopasne testne klase nalazi se u obrana/obrana-projekta.md.
+# bezopasne testne klase nalazi se u obrana/testovi-i-promjene.md (YAML deserijalizacija).
 POST {{host}}/api/postavke
 Authorization: Bearer {{anaTokenDodatno}}
 Content-Type: application/yaml
