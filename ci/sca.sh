@@ -8,7 +8,7 @@ source "$(dirname "$0")/zajednicko.sh"
 
 # ---------- 1. SBOM ----------
 if [ "$STACK" = java ]; then
-  # Profil -Psca iz pom.xml (cyclonedx-maven-plugin); test ovisnosti nisu uključene.
+  # Profil -Psca iz pom.xml (cyclonedx-maven-plugin); projektni profil uključuje i testne ovisnosti.
   "${MVN[@]}" -Psca -DskipTests cyclonedx:makeAggregateBom
   cp target/bom.json "$IZVJESTAJI/sbom.cdx.json"
 elif [ "$STACK" = python ]; then

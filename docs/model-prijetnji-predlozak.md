@@ -100,6 +100,46 @@ Granice povjerenja:
 
 ---
 
+### Granica CI/CD sustava
+
+```mermaid
+flowchart LR
+    K[Klijent] -->|HTTP / produkcijski TLS| A
+    subgraph A[Granica povjerenja: aplikacija]
+      API[Kontroleri i servisi]
+    end
+    A -->|JDBC| B
+    subgraph B[Granica povjerenja: baza podataka]
+      DB[(H2 za razvoj / SQL Server u laboratoriju)]
+    end
+    R[Git repozitorij] --> C
+    subgraph C[Granica povjerenja: CI/CD]
+      CI[Test, SAST, SCA, tajne, DAST] --> G[Sigurnosna vrata]
+    end
+    C -->|izvještaji| O[Preglednik rezultata]
+```
+
+CI izvršava kod iz repozitorija, stoga su prava runnera, ulazne grane, tajne i artefakti zasebna granica povjerenja. Lokalni H2 i laboratorijski SQL Server nisu ista produkcijska konfiguracija.
+
+| Element CI/CD | S | T | R | I | D | E |
+|---|---|---|---|---|---|---|
+| Repozitorij i workflow | lažni doprinositelj | izmjena pravila vrata | nedostatak revizije commita | izlaganje tajne | preopterećenje poslova | izmjena privilegija workflowa |
+| Runner i artefakti | lažni runner | podmetanje izvještaja | nedostaju zapisi izvođenja | curenje logova | nedostupan alat | zloporaba tokena posla |
+
+### Registar preostalog rizika
+
+Procjene su radne (1–3); preostali rizik nije rezultat produkcijskog mjerenja.
+
+| Prijetnja | Imovina | V × U | Postupanje i mjera s dokazom | Preostali rizik |
+|---|---|---|---|---|
+| Pristup tuđem nalazu | zdravstveni podaci | 3 × 3 | Umanjiti: provjera vlasništva; `SigurnostHttpTest` | Srednji: potrebna revizija svih endpointa |
+| Prolazak kroz putanju | datoteke nalaza | 3 × 3 | Umanjiti: ograničena putanja i NOFOLLOW; `PutanjeSigurnosniTest` | Srednji: ovisi o datotečnom sustavu |
+| Krađa računa preko reseta | korisnički računi | 3 × 3 | Umanjiti: slučajan jednokratni token; `AutentikacijaSigurnostTest` | Srednji: stvarna dostava pošte nije dokazana |
+| Pogađanje lozinki | računi i dostupnost | 3 × 3 | Umanjiti: BCrypt i lokalni limit; `OgranicenjeAutentikacijeTest` | Srednji: limit je lokalni i IP može biti dijeljena |
+| Ranjiva ovisnost | aplikacija i podaci | 2 × 3 | Umanjiti: SBOM i OSV; `ci/sca.sh` i `ci/gate.py` | Srednji: ovisi o ažurnosti baze nalaza i uspješnom CI-u |
+
+---
+
 ## 2. Imovina
 
 | Imovina | Zašto je vrijedna | Tko joj smije pristupiti |

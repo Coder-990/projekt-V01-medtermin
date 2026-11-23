@@ -33,12 +33,6 @@ public class LijecnikController {
     public List<Lijecnik> popis(@RequestParam(defaultValue = "prezime") String sort,
                                 @RequestParam(defaultValue = "asc") String smjer,
                                 PrijavljeniKorisnik korisnik) {
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): semgrep java.spring.security.injection.tainted-sql-string.tainted-sql-string: User data flows into this manually-constructed SQL string. User data can be safely inserted into SQL strings using prepared statements or an object-relational mapper (ORM). Manually-constructed SQL strings is a possible indicator of SQL ...
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M11 [Semgrep + FindSecBugs SQL_INJECTION_SPRING_JDBC; rucna potvrda toka]: sort i smjer dolaze iz zahtjeva; mapirati stupce na allowlistu i smjer na ASC/DESC. SQL identifikatori se ne bindaju s ?. Izvor/detalji: alati/poslije/pregled-koda.md.
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): semgrep java.spring.security.audit.spring-sqli.spring-sqli: Detected a string argument from a public method contract in a raw SQL statement. This could lead to SQL injection if variables in the SQL statement are not properly sanitized. Use a prepared statements (java.sql.PreparedStatement) instea...
         // M11: Ranije su sort i smjer iz zahtjeva izravno dodavani u SQL, pa je
         // napadač mogao poslati SQL fragment. Identifikatori stupaca ne mogu se
         // zamijeniti običnim bind parametrom: switch mapira samo poznate stupce,

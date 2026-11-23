@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LozinkaHasher {
-    // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-    // TODO(sec): M05 [rucni pregled]: Brzi SHA-256 bez soli nije prikladan za lozinke; predlozeni Argon2id/BCrypt/PBKDF2 uz sol i migraciju postojecih hasheva. Izvor/detalji: alati/poslije/pregled-koda.md.
     // M05: Raniji SHA-256 bio je brz i bez soli, što olakšava pogađanje pri curenju baze.
     // BCrypt za svaki hash stvara sol i koristi faktor rada 12, pa dvije iste lozinke
     // dobivaju različite zapise. Provjera stare SHA-256 vrijednosti ostaje radi migracije.

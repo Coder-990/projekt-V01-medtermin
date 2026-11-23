@@ -69,8 +69,6 @@ public class RezervacijaService {
         if (postoji == null || postoji == 0) {
             throw ApiException.nijePronadeno("Termin nije pronađen.");
         }
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M12 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Cijeli record otkriva OIB i napomenu; minimalni log bez osobnih podataka i obrada CR/LF znakova. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M12: Cijeli NovaRezervacija record ranije je u log zapisivao OIB i slobodnu
         // napomenu; napomena je mogla sadržavati i znakove za novi redak. Sada bilježimo
         // samo broj termina, bez osjetljivih podataka i proizvoljnog teksta korisnika.

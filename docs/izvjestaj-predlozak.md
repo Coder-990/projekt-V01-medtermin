@@ -7,7 +7,7 @@ Izvorna verzija: 117/117 izvornih testova prolazi, JaCoCo 659/659 linija i 225/2
 OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovisnosti podignute su na 2.22.3, koju taj izvještaj navodi kao ispravljenu. Naknadni OSV pregled 86 paketa u `alati/poslije/osv-java.txt` nije prijavio ranjivosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, ali ima usko isključen CVE-2018-1258 i nije koristio OSS Index. ZAP je pokrenut lokalno prije i poslije bez prijave; Firefox integracija nije uspjela, a dva upozorenja srednje razine ostaju za procjenu.
 
 
-> **Važno:** Izvorni funkcionalni test nalaza i sigurnosni test izravno su proturječni; izvorni test nije izmijenjen i trenutačno pada. ZAP je pokrenut lokalno bez autentikacije; Firefox integracija javila je grešku. Rezultati i crveno/zeleno su u `alati/poslije`. Izvorni primjeri zahtjeva i odgovora u nastavku opisi su scenarija, osim gdje su potkrijepljeni navedenim testom.
+> **Važno:** Funkcionalni testovi ostaju neizmijenjeni. Test koji očekuje pristup tuđem nalazu proturječi sigurnosnom zahtjevu; čisto pokretanje 24. 11. 2026. ima 157 testova, 1 pad i 0 pogrešaka: `NalaziFunkcionalniTest.nevaljaniFormatVracaNalazUzNapomenu` očekuje 200 za tuđi nalaz, dok zaštita vraća 404. ZAP je pokrenut lokalno bez autentikacije; Firefox integracija javila je grešku. Rezultati i crveno/zeleno su u `alati/poslije`. Izvorni primjeri zahtjeva i odgovora u nastavku opisi su scenarija, osim gdje su potkrijepljeni navedenim testom.
 
 > **Povijesna osnovica:** opis originalnih nalaza i predloženih reprodukcija u nastavku odnosi se na stanje prije ispravaka. Pojedine demonstracije i izvorni testovi nisu dinamički potvrđeni. Za trenutačni kod, stvarne testove i otvorene produkcijske rizike mjerodavni su [pregled provjera](../alati/poslije/README.md) i izvještaji u `alati/poslije`.
 
@@ -19,7 +19,7 @@ OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovis
 | **Varijanta** | V01 |
 | **Tehnologija** | Java 21 / Spring Boot 4.1.2 / Maven / H2 in-memory baza (izvorni HEAD: Boot 3.5.7) |
 | **Datum** | 13. studenoga 2026. |
-| **Korišteni savjeti s Moodlea** | Nijedan (samostalna analiza) |
+| **Korišteni savjeti s Moodlea** | Tri otvaranja savjeta razine 1. |
 | **Korišteni AI asistenti** | Antigravity AI i OpenAI Codex (analiza, izmjene koda i testova, skeniranje te dokumentacija) |
 
 ---

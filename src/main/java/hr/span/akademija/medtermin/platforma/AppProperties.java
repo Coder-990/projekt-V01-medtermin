@@ -7,7 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(String naziv, String storageDir, String mailboxDir, Cors cors) {
 
-    // TODO(sec): spotbugs EI_EXPOSE_REP [MALICIOUS_CODE; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.AppProperties$Cors.allowedOrigins() may expose internal representation by returning AppProperties$Cors.allowedOrigins
     public record Cors(List<String> allowedOrigins) {
         // M07: Obrambena kopija sprečava naknadnu izmjenu konfigurirane CORS liste.
         public Cors { allowedOrigins = allowedOrigins == null ? null : List.copyOf(allowedOrigins); }

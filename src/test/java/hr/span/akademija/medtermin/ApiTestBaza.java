@@ -31,7 +31,6 @@ import org.springframework.test.context.DynamicPropertySource;
  * Dokumenti i poruke e-pošte spremaju se u privremenu mapu, a ne u {@code ./data}.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@org.springframework.test.context.TestPropertySource(properties = {"app.auth-limit.login=10000", "app.auth-limit.reset=10000", "app.cors.allowed-origins=http://localhost:5173,https://sigurni-portal.hr"})
 public abstract class ApiTestBaza {
 
     protected static final ObjectMapper JSON = new ObjectMapper();

@@ -59,8 +59,6 @@ public class PrijavaController {
             return Html.odgovor(obrazacPrijave(returnUrl, "Neispravno korisničko ime ili lozinka."));
         }
         String token = tokeni.izdaj(korisnik.get().prijavljeni());
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M10 [rucni pregled]: Za HTTPS produkciju predloziti Secure cookie; HttpOnly/SameSite vec postoje. Uskladiti s TLS terminacijom i lokalnim HTTP razvojem. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M10: Secure sprečava slanje kolačića preko običnog HTTP-a; HttpOnly i
         // SameSite=Lax ostaju uključeni. app.cookie-secure zadano je true, a za
         // lokalni HTTP razvoj APP_COOKIE_SECURE=false. Produkcija treba HTTPS i true;
@@ -131,8 +129,6 @@ public class PrijavaController {
         if (returnUrl == null || returnUrl.isBlank()) {
             return "/";
         }
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M08 [rucni pregled]: Otvoreno preusmjeravanje; prihvatiti samo provjerene lokalne putanje i odbiti apsolutne URL-ove i //host. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M08: Ranije je returnUrl bez provjere postao Location zaglavlje, što je
         // omogućavalo preusmjeravanje na vanjsku stranicu. Prihvaćamo samo putanju
         // koja počinje jednim '/', bez obrnute kose crte, kontrolnih i '%' znakova.

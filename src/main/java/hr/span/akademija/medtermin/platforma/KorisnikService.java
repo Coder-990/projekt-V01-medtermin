@@ -61,14 +61,17 @@ public class KorisnikService {
         if (zahtjev == null || zahtjev.username() == null || zahtjev.password() == null) {
             return Optional.empty();
         }
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M06 [rucni pregled; FindSecBugs CRLF_INJECTION_LOGS]: Record zahtjev ispisuje i password u cistom tekstu; ukloniti tajne iz logova i sprijeciti CR/LF injekciju. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M06: Record zahtjeva sadrži lozinku i korisničko ime koje može sadržavati
         // kontrolne znakove. Zapisujemo samo događaj prijave bez tih vrijednosti;
         // time ne izlažemo lozinku i ne dopuštamo lažne retke u ovom logu.
         log.info("Zahtjev za prijavu");
         Optional<Korisnik> korisnik = pronadi(zahtjev.username())
                 .filter(k -> hasher.provjeri(zahtjev.password(), k.passwordHash()));
+        if (korisnik.isEmpty()) {
+            String cistiUsername = zahtjev.username().replaceAll("[\r\n]", "_");
+            log.warn("Neuspjela prijava za korisnika: {}", cistiUsername);
+            return Optional.empty();
+        }
         // M05: Tek nakon ispravne lozinke stari SHA-256 zamjenjujemo BCrypt zapisom.
         // Uvjet WHERE uključuje stari hash kako migracija ne bi prepisala lozinku
         // promijenjenu u međuvremenu. Lozinku dulju od 72 UTF-8 bajta ne migriramo

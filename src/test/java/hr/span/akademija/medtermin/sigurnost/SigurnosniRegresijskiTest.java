@@ -42,10 +42,16 @@ class SigurnosniRegresijskiTest extends ApiTestBaza {
         Path link = mapaDokumenata().resolve("ana-link.txt");
         Files.deleteIfExists(link);
         Files.createSymbolicLink(link, vani);
-        jdbc.update("INSERT INTO nalazi (pacijent, naziv, datoteka) VALUES (?, ?, ?)", "ana", "test", "ana-link.txt");
-        assertThat(get("/api/nalazi/preuzmi?datoteka=ana-link.txt", token).status()).isEqualTo(404);
-        assertThat(get("/api/nalazi/preuzmi?datoteka=" + enc("../ana-link.txt"), token).status()).isEqualTo(404);
-        assertThat(get("/api/nalazi/preuzmi?datoteka=" + enc(vani.toString()), token).status()).isEqualTo(404);
+        try {
+            jdbc.update("INSERT INTO nalazi (pacijent, naziv, datoteka) VALUES (?, ?, ?)", "ana", "test", "ana-link.txt");
+            assertThat(get("/api/nalazi/preuzmi?datoteka=ana-link.txt", token).status()).isEqualTo(404);
+            assertThat(get("/api/nalazi/preuzmi?datoteka=" + enc("../ana-link.txt"), token).status()).isEqualTo(404);
+            assertThat(get("/api/nalazi/preuzmi?datoteka=" + enc(vani.toString()), token).status()).isEqualTo(404);
+        } finally {
+            jdbc.update("DELETE FROM nalazi WHERE datoteka = ?", "ana-link.txt");
+            Files.deleteIfExists(link);
+            Files.deleteIfExists(vani);
+        }
     }
 
     @Test void istekliResetIMigracijaIOdjava() throws Exception {

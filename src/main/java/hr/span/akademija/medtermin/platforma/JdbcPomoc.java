@@ -16,8 +16,6 @@ public final class JdbcPomoc {
     public static long umetni(JdbcTemplate jdbc, String sql, Object... argumenti) {
         KeyHolder kljuc = new GeneratedKeyHolder();
         jdbc.update(con -> {
-            // TODO(sec): spotbugs OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE [EXPERIMENTAL; provjeriti nalaz]: hr.span.akademija.medtermin.platforma.JdbcPomoc.lambda$umetni$0(String, Object[], Connection) may fail to clean up java.sql.Statement on checked exception
-            // TODO(sec): T02 [FindSecBugs SQL_INJECTION_JDBC; provjera]: Pregledani pozivatelji koriste fiksni SQL i bind parametre; ne oznacavati potvrdenom injekcijom. Zadrzati taj ugovor i provjeravati nove pozive. Izvor/detalji: alati/poslije/pregled-koda.md.
             PreparedStatement ps = con.prepareStatement(sql, new String[] {"ID"});
             // OBL_UNSATISFIED_OBLIGATION: JdbcTemplate zatvara statement tek nakon što
             // ga tvorac vrati. Ako vezivanje parametara ne uspije, ovdje ga zatvaramo.

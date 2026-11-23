@@ -76,8 +76,6 @@ public class NalazController {
     public ResponseEntity<?> nalaz(@PathVariable long id, @RequestParam(required = false) String format,
                                    PrijavljeniKorisnik korisnik) throws IOException {
         Nalaz nalaz = pronadi(id).orElseThrow(() -> ApiException.nijePronadeno("Nalaz nije pronađen."));
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M01 [rucni pregled]: Provjeriti vlasnika prije parsiranja formata; nevaljani format preskace autorizaciju i vraca tudi nalaz. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M01: Ranije je provjera vlasnika bila unutar obrade formata; nepoznat format
         // preskočio ju je i vratio JSON tuđeg nalaza. Sada prije izbora JSON-a ili PDF-a
         // dopuštamo samo vlasnika ili administratora, a ostalima vraćamo 404.
@@ -102,8 +100,6 @@ public class NalazController {
     @GetMapping("/preuzmi")
     public ResponseEntity<byte[]> preuzmi(@RequestParam String datoteka, PrijavljeniKorisnik korisnik)
             throws IOException {
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M02 [rucni pregled]: contains(username) nije provjera vlasnistva; vezati dokument uz vlasnika u bazi i provjeriti kanonsku putanju unutar pohrane (../, apsolutne putanje, symlink). Izvor/detalji: alati/poslije/pregled-koda.md.
         // M02: Naziv koji sadrži korisničko ime nije dokaz vlasništva: mogao bi biti
         // naziv tuđeg dokumenta. Zato tražimo zapis u tablici nalazi i za običnog
         // korisnika zahtijevamo podudaranje pacijenta; administrator može dohvatiti
@@ -116,7 +112,6 @@ public class NalazController {
         }
         byte[] sadrzaj = procitajSigurno(datoteka);
         ContentDisposition privitak = ContentDisposition.attachment()
-                // TODO(sec): spotbugs NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE [STYLE; provjeriti nalaz]: Possible null pointer dereference in hr.span.akademija.medtermin.nalazi.NalazController.preuzmi(String, PrijavljeniKorisnik) due to return value of called method
                 .filename(datoteka, StandardCharsets.UTF_8)
                 .build();
         return ResponseEntity.ok()

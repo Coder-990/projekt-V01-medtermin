@@ -5,7 +5,7 @@ name: devsecops
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, demo/regresija]
   pull_request:
   workflow_dispatch:
   schedule:

@@ -25,7 +25,8 @@ fi
 
 if [ "$STACK" = java ]; then
   # verify = compile + test (+ JaCoCo report u fazi test) + package
-  "${MVN[@]}" verify
+  rc=0
+  "${MVN[@]}" verify || rc=$?
   cp -r target/site/jacoco/. "$IZVJESTAJI/pokrivenost/" 2>/dev/null || true
   cp target/surefire-reports/*.xml "$IZVJESTAJI/testovi/" 2>/dev/null || true
   python3 - "$IZVJESTAJI/pokrivenost/jacoco.csv" <<'PY' | while read -r l; do sazetak "$l"; done
@@ -37,6 +38,7 @@ try:
 except OSError:
     print("Pokrivenost: nema jacoco.csv")
 PY
+  exit "$rc"
 else
   dotnet test "$SLN" -c Release --collect:"XPlat Code Coverage" \
     --results-directory "$IZVJESTAJI/testovi" --logger "trx;LogFileName=testovi.trx"

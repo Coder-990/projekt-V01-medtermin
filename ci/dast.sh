@@ -65,6 +65,7 @@ docker run --rm --network host -v "$ZAP_DIR:/zap/wrk:rw" \
   "$ZAP_SLIKA" zap-baseline.py -t "$URL" -m "${ZAP_SPIDER_MINUTA:-1}" -I \
   -J zap.json -r zap.html -w zap.md --hook=/zap/wrk/zap_hooks.py || rc=$?
 echo "zap-baseline izlazni kod: $rc (0 = OK, 1/2 = nalazi, 3 = greška)"
+[ "$rc" -lt 3 ] || { echo "::error::ZAP nije uspješno izvršen"; exit "$rc"; }
 [ -f "$ZAP_DIR/zap.json" ] || { echo "::error::ZAP nije stvorio izvještaj"; exit 1; }
 rm -f "$ZAP_DIR/zap_hooks.py" "$ZAP_DIR/dast-putanje.txt"
 

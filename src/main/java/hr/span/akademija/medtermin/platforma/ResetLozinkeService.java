@@ -35,8 +35,6 @@ public class ResetLozinkeService {
         if (korisnik.isEmpty()) {
             return;
         }
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M03 [rucni pregled]: Token iz username + datum je predvidljiv; predlozen SecureRandom token visoke entropije i pohrana njegova hasha. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M03: Stari token izveden iz imena i datuma mogao se pogoditi. SecureRandom
         // generira 32 bajta, a Base64 URL kodiranje pretvara ih u token za poveznicu.
         // U bazi čuvamo samo SHA-256 sažetak, pa čitanje baze ne otkriva sam token.
@@ -57,8 +55,6 @@ public class ResetLozinkeService {
         if (token == null || token.isBlank()) {
             return false;
         }
-        // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-        // TODO(sec): M04 [rucni pregled]: Provjeriti istjece i iskoristen te atomski potrositi token; trenutan upit dopusta ponovnu uporabu bez isteka. Izvor/detalji: alati/poslije/pregled-koda.md.
         // M04: Isti sažetak tražimo samo među neiskorištenim tokenima koji još vrijede.
         // UPDATE istodobno označava token iskorištenim; samo zahtjev koji je promijenio
         // točno jedan redak nastavlja na promjenu lozinke. Transakcija povezuje potrošnju

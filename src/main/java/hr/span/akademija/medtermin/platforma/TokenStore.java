@@ -14,8 +14,6 @@ public class TokenStore {
     private record Sesija(PrijavljeniKorisnik korisnik, Instant istjece) { }
     private final SecureRandom random = new SecureRandom();
     private final Map<String, Sesija> tokeni = new HashMap<>();
-    // Izvorni nalaz ispod opisuje stanje prije ispravka; objašnjenje promjene slijedi.
-    // TODO(sec): M09 [rucni pregled]: Tokeni nemaju rok ni opoziv; predloziti TTL, ogranicenje pohrane i opoziv pri odjavi/promjeni lozinke. SecureRandom generiranje je dobro. Izvor/detalji: alati/poslije/pregled-koda.md.
     // M09: Ranije se tokeni nisu automatski uklanjali ni opozivali. Svaka nova
     // sesija sada traje najviše osam sati, a pohrana dopušta najviše 10 000 tokena.
     // Istekle sesije čiste se pri izdavanju i odbijaju pri provjeri. Pohrana je
