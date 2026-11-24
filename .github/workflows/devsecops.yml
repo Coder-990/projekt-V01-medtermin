@@ -31,7 +31,7 @@ jobs:
         with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
       - run: bash ci/build-test.sh
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: izvjestaj-build, path: izvjestaji/, if-no-files-found: warn }
 
   sast:
@@ -46,7 +46,7 @@ jobs:
         with: { python-version: '3.12' }
       - run: bash ci/sast.sh
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: izvjestaj-sast, path: izvjestaji/, if-no-files-found: warn }
       # Code scanning radi samo u javnim repozitorijima ili uz GitHub Advanced Security -> best effort.
       - name: Code scanning – Semgrep (ako je dostupno)
@@ -70,7 +70,7 @@ jobs:
         with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
       - run: bash ci/sca.sh
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: izvjestaj-sca, path: izvjestaji/, if-no-files-found: warn }
       - name: Code scanning – OSV (ako je dostupno)
         if: always() && hashFiles('izvjestaji/osv.sarif') != ''
@@ -99,7 +99,7 @@ jobs:
         with: { fetch-depth: 0 }   # cijela povijest: i obrisana tajna je procurila
       - run: bash ci/secrets.sh
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: izvjestaj-tajne, path: izvjestaji/, if-no-files-found: warn }
       - name: Code scanning – gitleaks (ako je dostupno)
         if: always() && hashFiles('izvjestaji/gitleaks.sarif') != ''
@@ -120,7 +120,7 @@ jobs:
         with: { distribution: temurin, java-version: '${{ env.JAVA_VERSION }}', cache: maven }
       - run: bash ci/dast.sh
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: izvjestaj-dast, path: izvjestaji/, if-no-files-found: warn }
 
   gate:
@@ -137,5 +137,5 @@ jobs:
           REZULTATI_POSLOVA: ${{ toJSON(needs) }}
         run: python3 ci/gate.py
       - if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with: { name: sigurnosna-vrata, path: izvjestaji/gate.json, if-no-files-found: warn }
