@@ -27,3 +27,5 @@ Naredba za izvorni kod (na privremenoj kopiji):
 Za trenutačni kod: `./mvnw -o clean test`. Rezultati se odnose na ovu lokalnu provjeru, ne na nedostupne nastavničke skrivene testove niti na GitHub Actions. `redirectIYaml` u izvornoj verziji pada već na provjeri preusmjeravanja; zaseban YAML test provjerava deserijalizaciju. Test slučajnosti pokazuje da se token razlikuje od stare MD5 formule, a sam ne dokazuje entropiju.
 
 JaCoCo: 843/847 linija (**99,53 %**) i 392/408 grana (**96,08 %**); [CSV](jacoco-aktualno.csv) i [XML](jacoco-aktualno.xml). Različito mjerenje u nastavničkoj ocjeni 99,9 % odnosi se na raniju predaju. Pokrivenost ne dokazuje odsutnost ranjivosti.
+
+Dopunska čista provjera 24. 11. 2026. na commitu d8ed685 i Jacksonu 2.23.0: 159/159 testova prolazi; JaCoCo 843/847 linija i 392/408 grana. Crvena provjera ostaje ranije dokumentirano pokretanje izvorne verzije.

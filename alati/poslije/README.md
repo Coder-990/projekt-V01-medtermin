@@ -26,3 +26,5 @@ Dependency-Check iznimka za CVE-2018-1258 ograničena je pravilima u [suppressio
 Aplikacija koristi H2 u memoriji, početne testne račune i lokalnu poštu s reset tokenima. Zaštita pošte zahtijeva POSIX dozvole, a sigurno otvaranje nalaza podršku za `SecureDirectoryStream`.
 
 Zahtjevi s autentikacijskim kolačićem provjeravaju pouzdani origin; ograničenje pokušaja prijave radi po korisničkom imenu i izravnoj IP adresi jednog procesa; ograničenje reseta radi po IP adresi. Za produkciju treba zasebno provjeriti HTTPS i Secure kolačiće, dopuštene origine, pouzdanost proxyja i izvorne IP adrese, trajnu pohranu, dostavu pošte i upravljanje tajnama. Lokalna konfiguracija i spremljeni izvještaji ne potvrđuju spremnost za produkciju.
+
+Dopunska čista lokalna provjera na commitu d8ed685 s Jacksonom 2.23.0: 159/159 testova, 843/847 linija i 392/408 grana.

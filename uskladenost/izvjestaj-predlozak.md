@@ -4,10 +4,10 @@
 
 Izvorna verzija: 117/117 izvornih testova prolazi, JaCoCo 659/659 linija i 225/225 grana. Ranije pokretanje popravljene verzije imalo je 156/157 prolaznih testova; brojevi pokrivenosti odnose se na ranije izvještaje. Raniji test koji je polaznik dodao očekivao je HTTP 200 s tuđim nalazom; uklonjen je prema povratnoj informaciji, a sigurnosni test potvrđuje 404. Jedanaest odabranih sigurnosnih testova ponovno je palo na izvornom kodu i prošlo na popravljenom. Dokaz za crveno/zeleno: `../alati/poslije/crveno-zeleno.md`.
 
-Povijesni OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovisnosti tada su podignute na 2.22.3, koju taj izvještaj navodi kao ispravljenu. U trenutačnom pom.xml Jackson Databind je 2.22.4, a Core 2.22.3; stari izvještaj nije dokaz novog skeniranja. Naknadni OSV pregled 86 paketa u `../alati/poslije/osv-java.txt` nije prijavio ranjivosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, ali ima usko isključen CVE-2018-1258 i nije koristio OSS Index. ZAP je pokrenut lokalno prije i poslije bez prijave; Firefox integracija nije uspjela, a dva upozorenja srednje razine ostaju za procjenu.
+Povijesni OSV izvještaj za testni Jackson 2.22.1 sadržavao je 7 nalaza. Obje testne ovisnosti tada su podignute na 2.22.3, koju taj izvještaj navodi kao ispravljenu. U trenutačnom pom.xml Jackson Databind i Core su 2.23.0; stari izvještaj nije dokaz novog skeniranja. Naknadni OSV pregled 86 paketa u `../alati/poslije/osv-java.txt` nije prijavio ranjivosti. Dependency-Check izvještaj za 2.22.3 nema aktivnih nalaza, ali ima usko isključen CVE-2018-1258 i nije koristio OSS Index. ZAP je pokrenut lokalno prije i poslije bez prijave; Firefox integracija nije uspjela, a dva upozorenja srednje razine ostaju za procjenu.
 
 
-> **Važno:** Izvorni funkcionalni testovi vraćeni su na početno stanje; dodani testovi premješteni su u paket `sigurnost`, a test koji je očekivao otkrivanje tuđeg nalaza uklonjen je. Čisto pokretanje 24. 11. 2026. ima 159 testova, bez padova i pogrešaka. JaCoCo bilježi 843/847 linija (99,53 %) i 392/408 grana (96,08 %). Skriveni nastavnički testovi i GitHub Actions nisu ponovno potvrđeni.
+> **Važno:** Izvorni funkcionalni testovi vraćeni su na početno stanje; dodani testovi premješteni su u paket `sigurnost`, a test koji je očekivao otkrivanje tuđeg nalaza uklonjen je. Čisto pokretanje 24. 11. 2026. ima 159 testova, bez padova i pogrešaka. JaCoCo bilježi 843/847 linija (99,53 %) i 392/408 grana (96,08 %). Skriveni nastavnički testovi i prolaz aktualnog GitHub Actions pokretanja nisu potvrđeni.
 
 > **Povijesna osnovica:** opis originalnih nalaza i predloženih reprodukcija u nastavku odnosi se na stanje prije ispravaka. Pojedine demonstracije i izvorni testovi nisu dinamički potvrđeni. Za trenutačni kod, stvarne testove i otvorene produkcijske rizike mjerodavni su [pregled provjera](../alati/poslije/README.md) i izvještaji u `../alati/poslije`.
 
@@ -295,3 +295,7 @@ U stvarnom industrijskom projektu preporučuju se sljedeće prakse:
 Pri izradi korišteni su AI asistenti navedeni na početku izvještaja; osoba koja predaje projekt treba pregledati i razumjeti sve navedene izmjene i izvore.
 
 *Domagoj Borovčak, 13. studenoga 2026.*
+
+### Sigurnosna vrata u CI-ju
+
+Pregledani SpotBugs nalazi imaju pojedinačna obrazloženja i iznimke ograničene SHA-256 sažetkom datoteke u `ci/prihvaceno.txt`; promjena te datoteke zahtijeva novi pregled. Iznimka za Gitleaks odnosi se na konkretan istekli token lokalne testne sesije iz povijesti; token je uklonjen iz aktualnog HTTP primjera. Maven pri HTTP 429 ponavlja preuzimanje najviše dvaput. Prolaz aktualnog pokretanja i dokaz pada zbog namjerno vraćene ranjivosti još nisu potvrđeni.
