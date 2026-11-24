@@ -35,11 +35,6 @@ public class ResetLozinkeService {
         if (korisnik.isEmpty()) {
             return;
         }
-        // M03: Stari token izveden iz imena i datuma mogao se pogoditi. SecureRandom
-        // generira 32 bajta, a Base64 URL kodiranje pretvara ih u token za poveznicu.
-        // U bazi čuvamo samo SHA-256 sažetak, pa čitanje baze ne otkriva sam token.
-        // Prije spremanja opozivamo prethodne tokene korisnika i rok postavljamo na
-        // 15 minuta. Isporuka se obavlja postojećim lokalnim servisom PostaService.
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -55,11 +50,6 @@ public class ResetLozinkeService {
         if (token == null || token.isBlank()) {
             return false;
         }
-        // M04: Isti sažetak tražimo samo među neiskorištenim tokenima koji još vrijede.
-        // UPDATE istodobno označava token iskorištenim; samo zahtjev koji je promijenio
-        // točno jedan redak nastavlja na promjenu lozinke. Transakcija povezuje potrošnju
-        // i promjenu lozinke pa iznimka vraća promjene baze. U testu dva istodobna
-        // zahtjeva s istim tokenom završavaju jednim uspjehom i jednim odbijanjem.
         String hash = sazetak("SHA-256", token.trim());
         int potroseno = jdbc.update("UPDATE reset_tokeni SET iskoristen = TRUE WHERE token = ? AND iskoristen = FALSE AND istjece > ?",
                 hash, LocalDateTime.now());

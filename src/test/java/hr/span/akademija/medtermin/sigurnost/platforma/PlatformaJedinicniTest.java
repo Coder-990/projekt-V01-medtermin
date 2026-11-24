@@ -1,4 +1,4 @@
-package hr.span.akademija.medtermin.platforma;
+package hr.span.akademija.medtermin.sigurnost.platforma;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import hr.span.akademija.medtermin.platforma.*;
 import hr.span.akademija.medtermin.platforma.AppProperties.Cors;
 import hr.span.akademija.medtermin.platforma.AuthController.NovaLozinka;
 import hr.span.akademija.medtermin.platforma.AuthController.ResetZahtjev;
@@ -254,7 +255,6 @@ class PlatformaJedinicniTest {
     @Test
     @DisplayName("PostaService baca UncheckedIOException ako stvaranje mape ili datoteke ne uspije")
     void postaServiceIOException(@TempDir Path tempDir) throws IOException {
-        // Postavimo običnu datoteku na mjesto gdje bi trebala biti mapa 'posta', tako da createDirectories baci IOException
         Path datotekaUmjestoMape = tempDir.resolve("posta-kao-datoteka.txt");
         Files.writeString(datotekaUmjestoMape, "blokada");
 
@@ -282,12 +282,10 @@ class PlatformaJedinicniTest {
         MockHttpServletResponse res = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
 
-        // Bearer s praznim sadržajem
         req.addHeader("Authorization", "Bearer    ");
         filter.doFilter(req, res, chain);
         assertThat(req.getAttribute(AuthFilter.ATRIBUT)).isNull();
 
-        // Kolačić koji nije SESSION
         MockHttpServletRequest req2 = new MockHttpServletRequest();
         req2.setCookies(new Cookie("DRUGI_KOLACIC", "vrijednost"));
         filter.doFilter(req2, res, chain);
@@ -302,21 +300,17 @@ class PlatformaJedinicniTest {
         ResetLozinkeService reset = mock(ResetLozinkeService.class);
         AuthController controller = new AuthController(korisnici, tokeni, reset);
 
-        // resetZahtjev s null tijelom
         assertThat(controller.resetZahtjev(null).getBody().get("poruka"))
                 .isEqualTo("Ako korisnik postoji, poslali smo upute na e-mail.");
 
-        // reset s neuspjelim servisom
         when(reset.postaviNovuLozinku(any(), any())).thenReturn(false);
         ResponseEntity<java.util.Map<String, String>> odgNeuspjeli = controller.reset(new NovaLozinka("token", "lozinka"));
         assertThat(odgNeuspjeli.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(odgNeuspjeli.getBody().get("greska")).isEqualTo("Token nije valjan ili je istekao.");
 
-        // reset s null zahtjevom
         ResponseEntity<java.util.Map<String, String>> odgNull = controller.reset(null);
         assertThat(odgNull.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
-        // ja s nepoznatim korisnikom -> 401
         when(korisnici.pronadi("nepoznat")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> controller.ja(new PrijavljeniKorisnik(99L, "nepoznat", "KORISNIK")))
                 .isInstanceOf(ApiException.class)

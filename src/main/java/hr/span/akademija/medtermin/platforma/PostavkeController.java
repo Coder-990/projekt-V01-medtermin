@@ -47,12 +47,6 @@ public class PostavkeController {
 
     @PostMapping
     public Map<String, Object> spremi(@RequestBody byte[] tijelo, PrijavljeniKorisnik korisnik) {
-        // predloziti SafeConstructor i podrzanu verziju; provjera Map nakon load ne sprjecava nuspojave.
-        // Plan, korak 5 / CVE-2022-1471: Prijašnji new Yaml().load mogao je obraditi
-        // objektni tag prije nego što bi naknadna provjera ustanovila je li rezultat Map.
-        // SafeConstructor prihvaća podatkovne tipove bez proizvoljne konstrukcije Java
-        // objekata; veličina, dubina, aliasi i duplikati ograničavaju složenost ulaza.
-        // Nakon parsiranja dodatno provjeravamo poznate ključeve i tipove vrijednosti.
         if (tijelo.length > 16_384) throw ApiException.neispravno("Prevelik YAML.");
         Object dokument;
         try {

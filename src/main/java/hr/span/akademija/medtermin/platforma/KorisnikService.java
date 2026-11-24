@@ -4,11 +4,16 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /** Korisnički računi: prijava, registracija i promjena lozinke. */
 @Service
@@ -24,10 +29,13 @@ public class KorisnikService {
 
     private final JdbcTemplate jdbc;
     private final LozinkaHasher hasher;
-    // M09: Zajednička pohrana omogućuje opoziv svih sesija nakon promjene lozinke.
     private TokenStore tokeni;
+    private OgranicenjeAutentikacijeFilter ogranicenje;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
+    void postaviOgranicenje(OgranicenjeAutentikacijeFilter ogranicenje) { this.ogranicenje = ogranicenje; }
+
+    @Autowired
     void postaviTokenStore(TokenStore tokeni) { this.tokeni = tokeni; }
 
     public KorisnikService(JdbcTemplate jdbc, LozinkaHasher hasher) {
@@ -61,21 +69,23 @@ public class KorisnikService {
         if (zahtjev == null || zahtjev.username() == null || zahtjev.password() == null) {
             return Optional.empty();
         }
-        // M06: Record zahtjeva sadrži lozinku i korisničko ime koje može sadržavati
-        // kontrolne znakove. Zapisujemo samo događaj prijave bez tih vrijednosti;
-        // time ne izlažemo lozinku i ne dopuštamo lažne retke u ovom logu.
+        RequestAttributes atributi = RequestContextHolder.getRequestAttributes();
+        ServletRequestAttributes http = atributi instanceof ServletRequestAttributes a ? a : null;
+        String adresa = http == null ? null : http.getRequest().getRemoteAddr();
+        if (ogranicenje != null && adresa != null && ogranicenje.prijavaBlokirana(adresa, zahtjev.username())) {
+            if (http.getResponse() != null) http.getResponse().setHeader("Retry-After", "900");
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "Previše neuspjelih pokušaja. Pokušajte kasnije.");
+        }
         log.info("Zahtjev za prijavu");
         Optional<Korisnik> korisnik = pronadi(zahtjev.username())
                 .filter(k -> hasher.provjeri(zahtjev.password(), k.passwordHash()));
         if (korisnik.isEmpty()) {
+            if (ogranicenje != null && adresa != null) ogranicenje.neuspjelaPrijava(adresa, zahtjev.username());
             String cistiUsername = zahtjev.username().replaceAll("[\r\n]", "_");
             log.warn("Neuspjela prijava za korisnika: {}", cistiUsername);
             return Optional.empty();
         }
-        // M05: Tek nakon ispravne lozinke stari SHA-256 zamjenjujemo BCrypt zapisom.
-        // Uvjet WHERE uključuje stari hash kako migracija ne bi prepisala lozinku
-        // promijenjenu u međuvremenu. Lozinku dulju od 72 UTF-8 bajta ne migriramo
-        // automatski jer BCrypt ima tu granicu; korisnik je mora promijeniti.
+        if (ogranicenje != null && adresa != null) ogranicenje.uspjesnaPrijava(adresa, zahtjev.username());
         korisnik.filter(k -> k.passwordHash().matches("[0-9a-f]{64}")
                 && zahtjev.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 72).ifPresent(k ->
                 jdbc.update("UPDATE korisnici SET password_hash = ? WHERE id = ? AND password_hash = ?",
@@ -112,19 +122,15 @@ public class KorisnikService {
                 username, hasher.hash(lozinka), email, ime, prezime, uloga, oib);
     }
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void promijeniLozinku(String username, String novaLozinka) {
         provjeriLozinku(novaLozinka);
         jdbc.update("UPDATE korisnici SET password_hash = ? WHERE username = ?", hasher.hash(novaLozinka), username);
-        // M03/M04: Promjena lozinke poništava i ostale ranije izdane reset tokene;
-        // u istoj su transakciji s promjenom hasha, kako stari link ne bi ostao valjan.
         jdbc.update("UPDATE reset_tokeni SET iskoristen = TRUE WHERE username = ? AND iskoristen = FALSE", username);
-        // M09: Promjena ili reset lozinke opoziva sve postojeće sesije korisnika.
         if (tokeni != null) tokeni.opozoviKorisnika(username);
         log.info("Promijenjena lozinka");
     }
 
-    // M05: Ograničenje na 72 UTF-8 bajta sprječava da BCrypt prihvati samo početak duže lozinke.
     public static void provjeriLozinku(String lozinka) {
         if (lozinka == null || lozinka.length() < MIN_DULJINA_LOZINKE || lozinka.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
             throw ApiException.neispravno("Lozinka mora imati najmanje " + MIN_DULJINA_LOZINKE + " znakova.");

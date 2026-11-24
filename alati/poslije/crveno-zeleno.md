@@ -1,45 +1,29 @@
 # Crveno i zeleno: sigurnosni testovi
 
-15. 11. 2026., Java 21. Prije: privremena kopija Git `HEAD` (e72c770106bed84a9f3b1ce599ec144cc4ea67c3), s istim sigurnosnim testovima i testnom pomoćnom klasom; aplikacijski kod nije mijenjan. Poslije: trenutačni aplikacijski kod. Testovi koriste lokalnu, izdvojenu H2 bazu, privremene mape i lokalni HTTP port. Izvorni funkcionalni testovi nisu izmijenjeni.
+Ponovna provjera 24. 11. 2026., Java 21. Crveno: izdvojena kopija izvornog koda i njegova `pom.xml` iz commita `e72c770106bed84a9f3b1ce599ec144cc4ea67c3`, uz iste aktualne sigurnosne testove i `ApiTestBaza`. Zeleno: čista privremena kopija trenutačnog projekta. Oba pokretanja koriste lokalni HTTP i izdvojenu H2 bazu. Kompilirani su isti testni razredi; u izvornom pokretanju odabrani su testovi iz tablice, a u aktualnom cijeli skup. Verzije okvira i ovisnosti pripadaju odgovarajućim verzijama projekta.
 
-U oba pokretanja odabrani su isti testovi:
+Crveno: 11 testova, 11 padova, 0 pogrešaka. Zeleno: svih 11 navedenih testova prolazi unutar cjelokupnog skupa od 159 testova. Statusi su uspoređeni po metodi u JUnit XML izvještajima. Dnevnik izvornog izvođenja nije priložen jer stari kod u njemu zapisuje testnu lozinku.
+
+| Nalaz | Test | Izvorni kod | Trenutačni kod |
+|---|---|---|---|
+| S02 – prolazak kroz putanju | `SigurnosniRegresijskiTest#putanjaISymlink` | pada | prolazi |
+| S03 – otvoreno preusmjeravanje | `SigurnosniRegresijskiTest#redirectIYaml` | pada | prolazi |
+| S04 – CORS | `SigurnostHttpTest#nepoznatiHttpsOriginNijeDopusten` | pada | prolazi |
+| S06 – YAML | `YamlDeserijalizacijaTest#korisnickiYamlNeStvaraProizvoljniObjekt` | pada | prolazi |
+| S07 – pohrana lozinki | `AutentikacijaSigurnostTest#lozinkaSePohranjujeSaSoljuIKdfom` | pada | prolazi |
+| S08 – SQL sortiranje | `SigurnosniRegresijskiTest#sortiranjeOdbijaSql` | pada | prolazi |
+| S11 – predvidljiv token | `AutentikacijaSigurnostTest#resetTokenNijeIzvedenIzImenaIDatuma` | pada | prolazi |
+| S11 – višekratni token | `AutentikacijaSigurnostTest#resetTokenMozeSeIskoristitiSamoJednom` | pada | prolazi |
+| S12 – lozinka u zapisima | `AutentikacijaSigurnostTest#lozinkaSeNeZapisujeUPrijavi` | pada | prolazi |
+| S12 – WARN neuspjele prijave | `AutentikacijaSigurnostTest#neuspjelaPrijavaBiljeziWarnBezLozinke` | pada | prolazi |
+| S13 – nevaljani format | `SigurnostHttpTest#nevaljaniFormatNeOtkrivaTudiNalaz` | pada | prolazi |
+
+Naredba za izvorni kod (na privremenoj kopiji):
 
 ```bash
-./mvnw '-Dtest=AutentikacijaSigurnostTest,YamlDeserijalizacijaTest,SigurnostHttpTest#nevaljaniFormatNeOtkrivaTudiNalaz+nepoznatiHttpsOriginNijeDopusten,SigurnosniRegresijskiTest#sortiranjeOdbijaSql+redirectIYaml+putanjaISymlink' test
+./mvnw -o '-Dtest=AutentikacijaSigurnostTest,YamlDeserijalizacijaTest,SigurnostHttpTest#nevaljaniFormatNeOtkrivaTudiNalaz+nepoznatiHttpsOriginNijeDopusten,SigurnosniRegresijskiTest#sortiranjeOdbijaSql+redirectIYaml+putanjaISymlink' test
 ```
 
-Prije: 10 testova, 10 padova, 0 pogrešaka; poslije: 10 testova, 0 padova. Rezultati su prikupljeni iz JUnit XML-a; donja tablica bilježi konkretne metode. Test nepredvidljivosti uspoređuje novi token sa starom determinističkom formulom, a ne dokazuje entropiju sam po sebi. Kod koristi `SecureRandom`.
+Za trenutačni kod: `./mvnw -o clean test`. Rezultati se odnose na ovu lokalnu provjeru, ne na nedostupne nastavničke skrivene testove niti na GitHub Actions. `redirectIYaml` u izvornoj verziji pada već na provjeri preusmjeravanja; zaseban YAML test provjerava deserijalizaciju. Test slučajnosti pokazuje da se token razlikuje od stare MD5 formule, a sam ne dokazuje entropiju.
 
-| Test | Prije | Poslije |
-|---|---|---|
-| `YamlDeserijalizacijaTest#korisnickiYamlNeStvaraProizvoljniObjekt` | pada | prolazi |
-| `AutentikacijaSigurnostTest#resetTokenMozeSeIskoristitiSamoJednom` | pada | prolazi |
-| `AutentikacijaSigurnostTest#lozinkaSePohranjujeSaSoljuIKdfom` | pada | prolazi |
-| `AutentikacijaSigurnostTest#lozinkaSeNeZapisujeUPrijavi(CapturedOutput)` | pada | prolazi |
-| `AutentikacijaSigurnostTest#resetTokenNijeIzvedenIzImenaIDatuma` | pada | prolazi |
-| `SigurnosniRegresijskiTest#redirectIYaml` | pada | prolazi |
-| `SigurnosniRegresijskiTest#sortiranjeOdbijaSql` | pada | prolazi |
-| `SigurnosniRegresijskiTest#putanjaISymlink` | pada | prolazi |
-| `SigurnostHttpTest#nepoznatiHttpsOriginNijeDopusten` | pada | prolazi |
-| `SigurnostHttpTest#nevaljaniFormatNeOtkrivaTudiNalaz` | pada | prolazi |
-
-`redirectIYaml` prvo provjerava otvoreno preusmjeravanje; u izvornom kodu pada na toj provjeri pa njezin rezultat nije dokaz izvornog ponašanja YAML-a. Skenovi i ostala ograničenja navedeni su u `README.md`. Izvorni funkcionalni test za tuđi nalaz i novi sigurnosni test imaju međusobno suprotne zahtjeve; oni nisu oba prošla.
-
-Dodatni SCA nalaz N-10 provjeren je zasebno: `YamlDeserijalizacijaTest#korisnickiYamlNeStvaraProizvoljniObjekt` na izvornom kodu pada jer bezopasni testni objekt bude instanciran; na popravljenom kodu prolazi i odgovor je 400. Pokretanje: `./mvnw -Dtest=YamlDeserijalizacijaTest test` na obje verzije.
-
-## Rezultati provjerenih scenarija
-
-Zahtjevi su u navedenim testnim metodama; koriste se samo stvoreni testni računi i datoteke. Podaci o tokenima i lozinkama namjerno se ne prepisuju u izvještaj.
-
-| Scenarij | Izvorni kod | Popravljeni kod |
-|---|---|---|
-| `GET /api/nalazi/2?format=nevaljano` kao drugi korisnik | 200 | 404 |
-| `GET /api/nalazi/preuzmi` za simboličku poveznicu izvan pohrane | 200 | 404 |
-| Zahtjev za reset i usporedba tokena s MD5 imena i datuma | podudara se | ne podudara se |
-| Dva `POST /api/auth/reset` s istim tokenom | drugi 200 | drugi 400 |
-| Registracija i čitanje sažetka iz testne baze | nije BCrypt | BCrypt |
-| Prijava i provjera snimljenog loga | sadrži lozinku | ne sadrži lozinku |
-| CORS preflight s nepoznatim HTTPS originom | 204 | 403 |
-| Prijava s `returnUrl=//evil.example` | preusmjeravanje na vanjski origin | preusmjeravanje na `/` |
-| `GET /api/lijecnici` sa SQL izrazom u `sort` | 200 | 400 |
-| YAML s oznakom bezopasne testne klase | konstruktor je pozvan | konstruktor nije pozvan, 400 |
+JaCoCo: 843/847 linija (**99,53 %**) i 392/408 grana (**96,08 %**); [CSV](jacoco-aktualno.csv) i [XML](jacoco-aktualno.xml). Različito mjerenje u nastavničkoj ocjeni 99,9 % odnosi se na raniju predaju. Pokrivenost ne dokazuje odsutnost ranjivosti.

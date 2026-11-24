@@ -59,7 +59,7 @@ Ovaj dokument povezuje izmjene s izvornim zadacima iz [plana](plan-ispravljanja-
 
 ## T01 i pomoćni XML alati
 
-- **Što:** Postojeće zabrane DOCTYPE-a i vanjskih entiteta u `UvozTermina` zadržane su i komentirane. `../scripts/spotbugs-pregled.py` i `../scripts/oznacavanje-ranjovisti.py` koriste `defusedxml` i ograničavaju veličinu XML izvještaja; ovisnost je navedena u `../scripts/requirements-security-tools.txt`.
+- **Što:** Postojeće zabrane DOCTYPE-a i vanjskih entiteta u `UvozTermina` zadržane su i komentirane. `../obrana/scripts` i `../obrana/scripts` koriste `defusedxml` i ograničavaju veličinu XML izvještaja; ovisnost je navedena u `../obrana/scripts`.
 - **Zašto i rezultat:** Sigurnosni test potvrđuje odbijanje XML-a s vanjskim entitetom; pomoćni alati sigurnije obrađuju nepouzdane izvještaje.
 - **Provjera:** `UvozSigurnosniTest` i Python provjera sintakse. T02 i ostala upozorenja ostaju predmet odvojene provjere.
 

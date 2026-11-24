@@ -327,7 +327,7 @@ Sljedeće tablice sadrže svih **60 nalaza** iz izvještaja. Nazivi su iz javnih
 ## Povezane datoteke i izvori
 
 - [Izvorni OSV izvještaj](osv-java.txt)
-- [OSV skripta](../../scripts/osv-scan.sh)
+- [OSV skripta](../../obrana/scripts/osv-scan.sh)
 - [Maven konfiguracija](../../pom.xml)
 - [Konfiguracija aplikacije](../../src/main/resources/application.properties)
 - [Učitavanje YAML postavki](../../src/main/java/hr/span/akademija/medtermin/platforma/PostavkeController.java)

@@ -38,8 +38,6 @@ public final class Html {
     }
 
     public static ResponseEntity<String> odgovor(String html) {
-        // CSP ograničava učitavanje vanjskih sadržaja i slanje obrazaca na vlastiti
-        // origin; inline stil je potreban postojećim stranicama bez JavaScripta.
         return ResponseEntity.ok().contentType(TEXT_HTML_UTF8)
                 .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
                 .body(html);

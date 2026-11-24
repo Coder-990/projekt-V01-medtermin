@@ -54,8 +54,6 @@ public class PostaService {
                 """.formatted(korisnik.email(), postavke.naziv(), korisnik.username(), poveznica, token);
         try {
             Path mapa = pohrana.posta();
-            // Datoteke s reset tokenima služe samo za lokalni razvoj. Ne mijenjamo
-            // postojeće dozvole: odbijamo nesigurnu ili simbolički povezanu mapu.
             Files.createDirectories(mapa, PosixFilePermissions.asFileAttribute(
                     PosixFilePermissions.fromString("rwx------")));
             if (Files.isSymbolicLink(mapa) || !Files.getFileStore(mapa).supportsFileAttributeView("posix")) {
@@ -68,16 +66,12 @@ public class PostaService {
             if (!korisnik.username().matches("[A-Za-z0-9._-]{3,50}")) {
                 throw new IOException("Neispravno korisničko ime za lokalnu poštu.");
             }
-            // CREATE_NEW putem createTempFile sprječava koliziju dvaju zahtjeva;
-            // token se stvara s pravima 0600, bez čitanja za grupu i ostale.
             Path datoteka = Files.createTempFile(mapa, korisnik.username() + "-", ".txt",
                     PosixFilePermissions.asFileAttribute(PRIVATNE_DOZVOLE));
             Files.writeString(datoteka, poruka, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        // CRLF_INJECTION_LOGS: ne zapisujemo ime iz baze; token i sadržaj poruke
-        // nikada ne izlaze u aplikacijski log.
         log.info("Pripremljena lokalna poruka za promjenu lozinke");
     }
 }

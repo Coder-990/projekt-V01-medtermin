@@ -65,4 +65,14 @@ class AutentikacijaSigurnostTest extends ApiTestBaza {
         prijava(user, lozinka);
         assertThat(izlaz.getAll()).doesNotContain(lozinka);
     }
+    @Test
+    void neuspjelaPrijavaBiljeziWarnBezLozinke(CapturedOutput izlaz) {
+        String lozinka = "NeZapisivatiLozinku123!";
+        String korisnickoIme = "nepostojeci\r\nLAZNI";
+        assertThat(postJson("/api/auth/login", null,
+                Map.of("username", korisnickoIme, "password", lozinka)).status()).isEqualTo(401);
+        assertThat(izlaz.getAll()).containsPattern("(?m)^.*\\bWARN\\b.*Neuspjela prijava za korisnika: nepostojeci__LAZNI$")
+                .doesNotContain(lozinka, korisnickoIme);
+    }
+
 }

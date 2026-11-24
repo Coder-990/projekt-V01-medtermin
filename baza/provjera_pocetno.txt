@@ -1,0 +1,100 @@
+Provjera zadataka – domena: medtermin, baza: MedTermin, prijava: sa
+
+Changed database context to 'MedTermin'.
+Warning: Null value is eliminated by an aggregate or other SET operation.
+Zadatak  Status   Provjera
+-------  -------  ------------------------------------------------------------------------
+Z1       PISANO   Analiza prijetnji zatečenog stanja (predaje se pisano, ne provjerava se automatski)
+Z2.1     PALO     Aplikacijska prijava medtermin_app ima novu jaku lozinku i CHECK_POLICY = ON
+                  -> ALTER LOGIN [medtermin_app] WITH PASSWORD = N'<nova jaka lozinka>'; pa ALTER LOGIN [medtermin_app] WITH CHECK_POLICY = ON; (prijava mora ostati omogućena).
+Z2.2     PALO     Aplikacijska prijava nije u ulogama poslužitelja (sysadmin…) i nema CONTROL SERVER
+                  -> ALTER SERVER ROLE sysadmin DROP MEMBER [medtermin_app]; – aplikaciji ne trebaju prava na razini poslužitelja.
+Z2.3     PALO     Aplikacijski korisnik nije u fiksnim ulogama baze (db_owner, db_datareader…)
+                  -> ALTER ROLE db_owner DROP MEMBER [medtermin_app]; prava dodijelite preko vlastite uloge (Z3).
+Z2.4     PALO     Postoji vlastita administratorska prijava, a sa je onemogućen
+                  -> CREATE LOGIN <ime> … CHECK_POLICY = ON; ALTER SERVER ROLE sysadmin ADD MEMBER <ime>; ALTER LOGIN sa DISABLE; pa upišite ADMIN_LOGIN/ADMIN_PASSWORD u .env i docker compose up -d.
+Z2.5     PALO     Korisnik podrska nije u db_datareader niti drugim fiksnim ulogama
+                  -> ALTER ROLE db_datareader DROP MEMBER podrska; (korisnika podrska nemojte brisati – treba za Z4).
+Z3.1     PALO     Uloga uloga_aplikacija postoji, medtermin_app je član i aplikacija i dalje radi (SELECT/INSERT)
+                  -> CREATE ROLE uloga_aplikacija; GRANT … ON dbo.<tablica> TO uloga_aplikacija; ALTER ROLE uloga_aplikacija ADD MEMBER [medtermin_app];
+Z3.2     PALO     Aplikacijski korisnik ne može mijenjati shemu (CREATE/ALTER/DROP, ALTER ANY USER)
+                  -> Aplikacija ne smije imati db_owner/db_ddladmin ni GRANT ALTER/CONTROL; DDL radi administrator (ili alat za migracije s posebnom prijavom).
+Z3.3     PALO     Aplikacija ne može čitati ni mijenjati dnevnik dbo.revizija (puni ga samo okidač)
+                  -> Ne dodjeljujte prava na dbo.revizija (po želji DENY SELECT, UPDATE, DELETE … TO uloga_aplikacija); okidač i dalje upisuje zbog ownership chaininga.
+Z3.4     PALO     Uloga public nema prava na korisničke objekte i sheme
+                  -> public = svi korisnici baze (i guest). Pronađeno: SELECT na shemi dbo. Koristite REVOKE … FROM public.
+Z4.1     PALO     Na dbo.rezervacije postoji uključena sigurnosna politika s FILTER predikatom (RLS)
+                  -> CREATE FUNCTION … WITH SCHEMABINDING; CREATE SECURITY POLICY … ADD FILTER PREDICATE …(pacijent) ON dbo.rezervacije WITH (STATE = ON);
+Z4.2     PALO     RLS radi: aplikacija vidi samo zapise korisnika iz SESSION_CONTEXT(korisnik), ADMIN sve
+                  -> Aplikacija kao ana vidi svojih 1 i tuđih 1 zapisa; bez konteksta 2; kao admin 2 vlasnika. Očekivano: ≥1, 0, 0, ≥2. Filtrirajte po pacijent = SESSION_CONTEXT(N'korisnik'); korisnici s ulogom ADMIN vide sve; bez konteksta aplikacija ne vidi ništa.
+Z4.3     PALO     Stupci korisnici.oib i korisnici.email su maskirani (Dynamic Data Masking)
+                  -> ALTER TABLE dbo.korisnici ALTER COLUMN email ADD MASKED WITH (FUNCTION = 'email()'); isto za oib, npr. partial(…).
+Z4.4     PALO     Podrška čita korisnike, ali vidi maskirani OIB i e-mail
+                  -> podrska vidi oib=48291736504, email=ana@primjer.hr. podrska mora dobiti SELECT na korisnike (bez password_hash), ali bez UNMASK – vidi maskirane vrijednosti.
+Z4.5     PALO     Podrška ne može čitati password_hash i nema UNMASK
+                  -> GRANT SELECT ON dbo.korisnici (id, username, …) – popišite stupce bez password_hash; provjerite i prava uloge public.
+Z5.1     PALO     Baza MedTermin je šifrirana TDE-om (encryption_state = 3)
+                  -> U master: CREATE MASTER KEY, CREATE CERTIFICATE; u bazi: CREATE DATABASE ENCRYPTION KEY … BY SERVER CERTIFICATE; ALTER DATABASE … SET ENCRYPTION ON;
+Z5.2     PALO     TDE certifikat je sigurnosno kopiran s privatnim ključem u ./backup
+                  -> USE master; BACKUP CERTIFICATE <cert> TO FILE = '/var/opt/mssql/backup/<cert>.cer' WITH PRIVATE KEY (FILE = '….pvk', ENCRYPTION BY PASSWORD = '…'); – bez toga se kopija baze ne može vratiti na drugi poslužitelj.
+Z5.3     PALO     U bazi postoji AES simetrični ključ zaštićen certifikatom
+                  -> CREATE MASTER KEY …; CREATE CERTIFICATE …; CREATE SYMMETRIC KEY … WITH ALGORITHM = AES_256 ENCRYPTION BY CERTIFICATE …;
+Z5.4     PALO     OIB u dbo.rezervacije je šifriran (oib_sifrirano), a čisti tekst uklonjen
+                  -> Dodajte stupac oib_sifrirano VARBINARY(256) u dbo.rezervacije, napunite ga s ENCRYPTBYKEY(KEY_GUID(…), oib), a stupac oib uklonite (ili postavite na NULL).
+Z6.1     PALO     Server audit zapisuje u /var/opt/mssql/audit (./audit) i uključen je
+                  -> CREATE SERVER AUDIT … TO FILE (FILEPATH = '/var/opt/mssql/audit/'); ALTER SERVER AUDIT … WITH (STATE = ON);
+Z6.2     PALO     Server audit specifikacija bilježi neuspjele i uspješne prijave
+                  -> CREATE SERVER AUDIT SPECIFICATION … ADD (FAILED_LOGIN_GROUP), ADD (SUCCESSFUL_LOGIN_GROUP) WITH (STATE = ON);
+Z6.3     PALO     Database audit specifikacija bilježi SELECT nad dbo.korisnici i dbo.rezervacije
+                  -> CREATE DATABASE AUDIT SPECIFICATION … ADD (SELECT ON OBJECT::dbo.korisnici BY public), ADD (SELECT ON OBJECT::dbo.rezervacije BY public) … WITH (STATE = ON);
+Z6.4     PALO     Database audit specifikacija bilježi promjene prava i članstva u ulogama
+                  -> ADD (DATABASE_PERMISSION_CHANGE_GROUP), ADD (SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP), ADD (DATABASE_ROLE_MEMBER_CHANGE_GROUP)
+Z6.5     PALO     Audit datoteka stvarno sadrži SELECT zapise nad osjetljivim tablicama
+                  -> U audit datoteci nema SELECT zapisa (action_id = SL) nad osjetljivim tablicama ove baze.
+Z7.1     PALO     Postoji puna sigurnosna kopija baze u ./backup, šifrirana (WITH ENCRYPTION)
+                  -> BACKUP DATABASE … TO DISK = '/var/opt/mssql/backup/….bak' WITH ENCRYPTION (ALGORITHM = AES_256, SERVER CERTIFICATE = …), CHECKSUM;
+Z7.2     PALO     Šifrirana kopija ima kontrolne zbrojeve (WITH CHECKSUM)
+                  -> Dodajte CHECKSUM u WITH dio naredbe BACKUP DATABASE.
+Z7.3     PALO     Kopija je provjerena s RESTORE VERIFYONLY (zabilježeno u msdb)
+                  -> RESTORE VERIFYONLY FROM DISK = '…' WITH CHECKSUM, LOADHISTORY; (LOADHISTORY zapisuje provjeru u msdb.dbo.restorehistory).
+Z7.4     PALO     Probni povrat: baza MedTermin_ProbniRestore vraćena iz kopije i čitljiva
+                  -> RESTORE FILELISTONLY …; RESTORE DATABASE [MedTermin_ProbniRestore] FROM DISK = '…' WITH MOVE … TO '/var/opt/mssql/data/…', MOVE …, CHECKSUM;
+Z8.1     PALO     Rizične opcije poslužitelja su isključene (xp_cmdshell, cross db ownership chaining, Ad Hoc Distributed Queries, clr enabled)
+                  -> Još uključeno: cross db ownership chaining, clr enabled, Ad Hoc Distributed Queries. EXEC sp_configure N'<opcija>', 0; RECONFIGURE;
+Z8.2     PALO     TRUSTWORTHY je isključen za MedTermin
+                  -> ALTER DATABASE [MedTermin] SET TRUSTWORTHY OFF; – uz db_owner i vlasnika sa omogućuje eskalaciju do sysadmin.
+Z8.3     PALO     Korisnik guest nema CONNECT u bazi MedTermin
+                  -> REVOKE CONNECT FROM guest; – inače se svaka prijava na poslužitelj (npr. bi_izvjestaji) može spojiti na bazu.
+ 
+Ukupno: 0 / 30 automatskih provjera je prošlo.
+ 
+REZULTAT|Z2.1|PALO
+REZULTAT|Z2.2|PALO
+REZULTAT|Z2.3|PALO
+REZULTAT|Z2.4|PALO
+REZULTAT|Z2.5|PALO
+REZULTAT|Z3.1|PALO
+REZULTAT|Z3.2|PALO
+REZULTAT|Z3.3|PALO
+REZULTAT|Z3.4|PALO
+REZULTAT|Z4.1|PALO
+REZULTAT|Z4.2|PALO
+REZULTAT|Z4.3|PALO
+REZULTAT|Z4.4|PALO
+REZULTAT|Z4.5|PALO
+REZULTAT|Z5.1|PALO
+REZULTAT|Z5.2|PALO
+REZULTAT|Z5.3|PALO
+REZULTAT|Z5.4|PALO
+REZULTAT|Z6.1|PALO
+REZULTAT|Z6.2|PALO
+REZULTAT|Z6.3|PALO
+REZULTAT|Z6.4|PALO
+REZULTAT|Z6.5|PALO
+REZULTAT|Z7.1|PALO
+REZULTAT|Z7.2|PALO
+REZULTAT|Z7.3|PALO
+REZULTAT|Z7.4|PALO
+REZULTAT|Z8.1|PALO
+REZULTAT|Z8.2|PALO
+REZULTAT|Z8.3|PALO

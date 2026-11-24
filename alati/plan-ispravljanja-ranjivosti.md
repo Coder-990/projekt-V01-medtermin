@@ -103,7 +103,7 @@ Niži prioritet i zasebna trijaža:
 - **T01 / `XXE_DOCUMENT`:** [UvozTermina.java](../src/main/java/hr/span/akademija/medtermin/termini/UvozTermina.java) već ima zabranu DOCTYPE-a i vanjskih entiteta. Sačuvati zaštite i potvrditi testom; nije potvrđena XXE ranjivost.
 - **T02 / `SQL_INJECTION_JDBC`:** [JdbcPomoc.java](../src/main/java/hr/span/akademija/medtermin/platforma/JdbcPomoc.java) u pregledanim pozivima prima fiksni SQL s bind parametrima. Provjeravati ugovor pozivatelja; ne poistovjećivati s M11.
 - **`SPRING_ENDPOINT`:** 23 informativna zapisa nisu 23 ranjivosti.
-- **Python XML upozorenja:** pregledati `../scripts/oznacavanje-ranjovisti.py` i `../scripts/spotbugs-pregled.py` za obradu nepouzdanih izvještaja; razmotriti `defusedxml` i ograničenje veličine. To nisu javni Java endpointovi.
+- **Python XML upozorenja:** pregledati `../obrana/scripts` i `../obrana/scripts` za obradu nepouzdanih izvještaja; razmotriti `defusedxml` i ograničenje veličine. To nisu javni Java endpointovi.
 - Ostala upozorenja o referencama, Unicodeu, formatiranju, null vrijednostima i resursima provjeriti prema stvarnom učinku; ne rangirati ih samo prema nazivu kategorije alata.
 
 Prethodno je izvorni projekt prošao 43 testa. To nije dokaz da sigurnosni slučajevi iz ovog plana već imaju testnu pokrivenost.

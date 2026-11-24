@@ -4,7 +4,7 @@ Ovdje su spremljeni izvještaji za popravljenu verziju. Za redoslijed lokalne de
 
 ## Testovi
 
-Dokumentirano mjerenje svih Java testova: 157 testova, 156 prolazi i jedan neizmijenjeni izvorni test pada jer za tuđi nalaz očekuje ranjivi HTTP 200 umjesto 404. Dokumentirana pokrivenost svih testova je 100 % linija i grana; to ne znači da svi testovi prolaze ili da su svi napadi obuhvaćeni.
+Čisto lokalno pokretanje 24. 11. 2026.: 159/159 testova prolazi. JaCoCo: 843/847 linija (99,53 %) i 392/408 grana (96,08 %). Povijesna ocjena 99,9 % odnosi se na raniju predaju; pokrivenost ne dokazuje odsutnost ranjivosti.
 
 - [Crveno/zeleno: isti sigurnosni testovi prije i poslije](crveno-zeleno.md).
 - [JaCoCo XML popravljene verzije](jacoco-popravljen.xml).
@@ -19,10 +19,10 @@ Dokumentirano mjerenje svih Java testova: 157 testova, 156 prolazi i jedan neizm
 
 Nalaz alata treba provjeriti u kodu; odsutnost nalaza nije dokaz odsutnosti ranjivosti. Izvještaji predstavljaju spremljeno skeniranje, a ne novu provjeru pri otvaranju ovog dokumenta. Usporedivi početni izvještaji nalaze se u [mapi prije](../prije/).
 
-Dependency-Check iznimka za CVE-2018-1258 ograničena je pravilima u [suppression konfiguraciji](../../scripts/dependency-check-suppressions.xml). Pri promjeni ovisnosti ili identifikacije komponente ponovno provjeri opravdanost iznimke.
+Dependency-Check iznimka za CVE-2018-1258 ograničena je pravilima u [suppression konfiguraciji](../../obrana/scripts/dependency-check-suppressions.xml). Pri promjeni ovisnosti ili identifikacije komponente ponovno provjeri opravdanost iznimke.
 
 ## Ograničenja lokalne demonstracije
 
 Aplikacija koristi H2 u memoriji, početne testne račune i lokalnu poštu s reset tokenima. Zaštita pošte zahtijeva POSIX dozvole, a sigurno otvaranje nalaza podršku za `SecureDirectoryStream`.
 
-Zahtjevi s autentikacijskim kolačićem provjeravaju pouzdani origin; ograničenje pokušaja prijave radi po IP adresi. Za produkciju treba zasebno provjeriti HTTPS i Secure kolačiće, dopuštene origine, pouzdanost proxyja i izvorne IP adrese, trajnu pohranu, dostavu pošte i upravljanje tajnama. Lokalna konfiguracija i spremljeni izvještaji ne potvrđuju spremnost za produkciju.
+Zahtjevi s autentikacijskim kolačićem provjeravaju pouzdani origin; ograničenje pokušaja prijave radi po korisničkom imenu i izravnoj IP adresi jednog procesa; ograničenje reseta radi po IP adresi. Za produkciju treba zasebno provjeriti HTTPS i Secure kolačiće, dopuštene origine, pouzdanost proxyja i izvorne IP adrese, trajnu pohranu, dostavu pošte i upravljanje tajnama. Lokalna konfiguracija i spremljeni izvještaji ne potvrđuju spremnost za produkciju.

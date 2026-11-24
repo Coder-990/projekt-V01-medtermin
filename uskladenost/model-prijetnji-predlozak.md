@@ -135,8 +135,8 @@ Procjene su radne (1–3); preostali rizik nije rezultat produkcijskog mjerenja.
 | Pristup tuđem nalazu | zdravstveni podaci | 3 × 3 | Umanjiti: provjera vlasništva; `SigurnostHttpTest` | Srednji: potrebna revizija svih endpointa |
 | Prolazak kroz putanju | datoteke nalaza | 3 × 3 | Umanjiti: ograničena putanja i NOFOLLOW; `PutanjeSigurnosniTest` | Srednji: ovisi o datotečnom sustavu |
 | Krađa računa preko reseta | korisnički računi | 3 × 3 | Umanjiti: slučajan jednokratni token; `AutentikacijaSigurnostTest` | Srednji: stvarna dostava pošte nije dokazana |
-| Pogađanje lozinki | računi i dostupnost | 3 × 3 | Umanjiti: BCrypt i lokalni limit; `OgranicenjeAutentikacijeTest` | Srednji: limit je lokalni i IP može biti dijeljena |
-| Ranjiva ovisnost | aplikacija i podaci | 2 × 3 | Umanjiti: SBOM i OSV; `ci/sca.sh` i `ci/gate.py` | Srednji: ovisi o ažurnosti baze nalaza i uspješnom CI-u |
+| Pogađanje lozinki | računi i dostupnost | 3 × 3 | Umanjiti: BCrypt i lokalni limit; `OgranicenjeAutentikacijeTest` | Srednji: limit prijave je lokalni po korisniku i IP-u; ograničenje reseta je po IP-u, a više procesa ne dijeli stanje |
+| Ranjiva ovisnost | aplikacija i podaci | 2 × 3 | Umanjiti: SBOM i OSV; `../ci/sca.sh` i `ci/gate.py` | Srednji: ovisi o ažurnosti baze nalaza i uspješnom CI-u |
 
 ---
 
@@ -171,7 +171,7 @@ Legenda kategorija STRIDE:
 | `POST /api/auth/login` | Brute-force pogađanje lozinki; credential stuffing | Izmjena tijela zahtjeva u tranzitu ako nema TLS-a | Nedostatak bilježenja neuspjelih prijava | **Curenje lozinke u log poslužitelja (N-06)** | Zaključavanje računa ili preopterećenje poslužitelja | Neovlaštena prijava na tuđi račun |
 | `POST /api/auth/register` | Registracija s tuđim podacima ili e-mailom | Injekcija zlonamjernih znakova u korisničko ime | – | Otkrivanje zauzetih korisničkih imena (user enumeration) | Masovno kreiranje lažnih računa | Pokušaj dodjele povlaštene uloge kroz unos (npr. uloga=ADMIN) |
 | `GET /api/ja` | Korištenje ukradenog ili krivotvorenog sesijskog tokena | – | – | Curenje profila korisnika i OIB-a trećim stranama | – | Pristup podacima drugog korisnika s neopozvanim tokenom |
-| `POST /api/auth/reset-zahtjev` | Zahtjev za reset tuđe lozinke radi ometanja | – | – | **Deterministički izračun predvidljivog tokena bez čitanja maila (N-03)** | Preopterećenje stvaranjem datoteka u `data/posta/` | **Potpuno preuzimanje administratorskog računa (N-03)** |
+| `POST /api/auth/reset-zahtjev` | Zahtjev za reset tuđe lozinke radi ometanja | – | – | **Deterministički izračun predvidljivog tokena bez čitanja maila (N-03)** | Preopterećenje stvaranjem datoteka u `../data/posta` | **Potpuno preuzimanje administratorskog računa (N-03)** |
 | `POST /api/auth/reset` | **Iskorištavanje predvidljivog MD5 tokena (N-03)** | **Ponovna uporaba već iskorištenog tokena (N-04)** | Nepostojanje trajnog audit zapisa o izmjeni lozinke | – | – | **Preuzimanje računa i trajna promjena lozinke (N-03, N-04)** |
 | `GET /api/lijecnici` | – | **Manipulacija SQL upitom kroz parametre `sort` i `smjer` (N-09)** | – | **Izvlačenje podataka iz baze putem SQL injekcije (N-09)** | Rušenje baze ili prekid rada složenim SQL funkcijama | Izvršavanje nedozvoljenih funkcija baze podataka |
 | `GET /api/termini` | – | – | – | Uvid u popunjenost i termine poliklinike | – | – |

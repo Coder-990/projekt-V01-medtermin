@@ -17,8 +17,6 @@ public final class JdbcPomoc {
         KeyHolder kljuc = new GeneratedKeyHolder();
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, new String[] {"ID"});
-            // OBL_UNSATISFIED_OBLIGATION: JdbcTemplate zatvara statement tek nakon što
-            // ga tvorac vrati. Ako vezivanje parametara ne uspije, ovdje ga zatvaramo.
             try {
                 new ArgumentPreparedStatementSetter(argumenti).setValues(ps);
                 return ps;

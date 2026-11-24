@@ -76,10 +76,6 @@ public class NalazController {
     public ResponseEntity<?> nalaz(@PathVariable long id, @RequestParam(required = false) String format,
                                    PrijavljeniKorisnik korisnik) throws IOException {
         Nalaz nalaz = pronadi(id).orElseThrow(() -> ApiException.nijePronadeno("Nalaz nije pronađen."));
-        // M01: Ranije je provjera vlasnika bila unutar obrade formata; nepoznat format
-        // preskočio ju je i vratio JSON tuđeg nalaza. Sada prije izbora JSON-a ili PDF-a
-        // dopuštamo samo vlasnika ili administratora, a ostalima vraćamo 404.
-        // Pokriveno u NalaziFunkcionalniTest.nevaljaniFormatVracaNalazUzNapomenu.
         if (!korisnik.isAdmin() && !nalaz.pacijent().equals(korisnik.username())) {
             throw ApiException.nijePronadeno("Nalaz nije pronađen.");
         }
@@ -100,10 +96,6 @@ public class NalazController {
     @GetMapping("/preuzmi")
     public ResponseEntity<byte[]> preuzmi(@RequestParam String datoteka, PrijavljeniKorisnik korisnik)
             throws IOException {
-        // M02: Naziv koji sadrži korisničko ime nije dokaz vlasništva: mogao bi biti
-        // naziv tuđeg dokumenta. Zato tražimo zapis u tablici nalazi i za običnog
-        // korisnika zahtijevamo podudaranje pacijenta; administrator može dohvatiti
-        // i tuđi registrirani dokument. Nepostojeći ili nedopušten zapis vraća 404.
         Integer broj = korisnik.isAdmin()
                 ? jdbc.queryForObject("SELECT COUNT(*) FROM nalazi WHERE datoteka = ?", Integer.class, datoteka)
                 : jdbc.queryForObject("SELECT COUNT(*) FROM nalazi WHERE datoteka = ? AND pacijent = ?", Integer.class, datoteka, korisnik.username());
@@ -120,11 +112,6 @@ public class NalazController {
                 .body(sadrzaj);
     }
 
-    // M02: Ime je jedna komponenta, bez apsolutne putanje ili podmapa. DirectoryStream
-    // drži otvorenu mapu, a SecureDirectoryStream otvara datoteku relativno na taj
-    // deskriptor uz NOFOLLOW_LINKS. Tako zamjena imena symlinkom između provjere i
-    // čitanja ne može preusmjeriti čitanje izvan pohrane. Ako OS nema sigurni stream,
-    // odbijamo čitanje umjesto povratka na nesigurnu provjeru pa otvaranje.
     private byte[] procitajSigurno(String naziv) throws IOException {
         Path relativna = Path.of(naziv);
         if (relativna.isAbsolute() || relativna.getNameCount() != 1

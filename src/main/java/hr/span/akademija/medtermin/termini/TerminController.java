@@ -86,8 +86,7 @@ public class TerminController {
             termin.put("napomena", s.napomena());
             uvezeni.add(termin);
         }
-        // CRLF_INJECTION_LOGS: ne zapisujemo ime iz baze koje je moglo nastati
-        // izvan validirane registracije; broj uvezenih termina dovoljan je za događaj.
+
         log.info("Uvezeno je {} termina", uvezeni.size());
         Map<String, Object> odgovor = new LinkedHashMap<>();
         odgovor.put("uvezeno", uvezeni.size());

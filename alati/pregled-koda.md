@@ -27,7 +27,7 @@ TODO komentari s istim ID-ovima dodani su uz odgovarajuća mjesta u `../src/main
 
 ### Semgrep
 
-[Izvorni SARIF](prije/semgrep-java.sarif): **6 nalaza**, 292 pravila, 64 pregledane mete. Dva nalaza označavaju istu SQL injekciju M11; četiri se odnose na Python XML parsiranje u `../scripts/oznacavanje-ranjovisti.py` i `../../scripts/spotbugs-pregled.py`.
+[Izvorni SARIF](prije/semgrep-java.sarif): **6 nalaza**, 292 pravila, 64 pregledane mete. Dva nalaza označavaju istu SQL injekciju M11; četiri se odnose na Python XML parsiranje u `../obrana/scripts` i `../../scripts/spotbugs-pregled.py`.
 
 Python nalazi nisu ranjivosti javnog Java endpointa. Rizik ovisi o tome jesu li ulazni XML izvještaji nepouzdani te o parseru i verziji Expat-a. Prijedlog je za nepouzdane izvještaje koristiti `defusedxml` i ograničiti veličinu ulaza. Nije potvrđen XXE napad u tim skriptama. Skeniranje poštuje git ignore, ograničenja veličine i odabir datoteka; čist rezultat nije dokaz odsutnosti ranjivosti.
 

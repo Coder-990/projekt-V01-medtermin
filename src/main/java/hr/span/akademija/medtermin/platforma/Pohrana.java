@@ -28,8 +28,6 @@ public class Pohrana {
 
     public void pripremi() throws IOException {
         Files.createDirectories(dokumenti);
-        // Nova lokalna mapa pošte ne smije biti dostupna drugim korisnicima.
-        // Postojeće mape ne mijenjamo; PostaService provjerava njihove dozvole.
         Files.createDirectories(posta, java.nio.file.attribute.PosixFilePermissions.asFileAttribute(
                 java.nio.file.attribute.PosixFilePermissions.fromString("rwx------")));
     }

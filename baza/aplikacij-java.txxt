@@ -1,0 +1,45 @@
+=== Aplikacija i baza: što smije aplikacijski račun ===
+Domena: medtermin | baza: MedTermin | prijava: medtermin_app | poslužitelj: sql,1433
+Veza: šifrirana (Encrypt=yes); certifikat poslužitelja se ne provjerava samo u laboratoriju.
+
+1. Tko sam u bazi
+   prijava (login) .................... medtermin_app
+   korisnik u bazi .................... medtermin_app
+   lozinka ............................ iz varijable okruženja
+   član sysadmin ...................... NE
+   član db_owner ...................... NE
+   član uloga_aplikacija .............. DA
+
+2. Što račun stvarno može (pokušaji se poništavaju – ROLLBACK)
+   čitanje dnevnika dbo.revizija ...... ODBIJENO
+   CREATE TABLE (promjena sheme) ...... ODBIJENO
+
+3. Isti unos na dva načina (sesija korisnika ana, unos: x' OR 1=1 --)
+   parametar (?) ...................... 0 redaka  (unos je ostao podatak)
+   lijepljenje u tekst upita .......... 1 redak  (injekcija uspijeva, ali RLS vraća samo Anine zapise – obrana u dubinu)
+
+4. Row-Level Security: SESSION_CONTEXT(N'korisnik') nad dbo.rezervacije
+   korisnik ana ....................... vidi 1 redak, od toga tuđih: 0
+   korisnik marko ..................... vidi 1 redak, od toga tuđih: 0
+   bez prijavljenog korisnika ......... vidi 0 redaka
+
+5. Korisnička podrška (prijava podrska): maskiranje i najmanje ovlasti
+   OIB i e-mail korisnice ana ......... *******6504 · aXXX@XXXX.com  (maskirano)
+   čitanje password_hash .............. ODBIJENO
+
+Upozorenja: 0. Aplikacija radi s najmanjim ovlastima, a baza je druga linija obrane.
+
+DEMO|lozinka|IZ_OKRUZENJA
+DEMO|sysadmin|NE
+DEMO|db_owner|NE
+DEMO|uloga_aplikacija|DA
+DEMO|revizija|ODBIJENO
+DEMO|ddl|ODBIJENO
+DEMO|parametar|0
+DEMO|injekcija_tudji|0
+DEMO|rls_ana_tudji|0
+DEMO|rls_marko_tudji|0
+DEMO|rls_bez|0
+DEMO|podrska_oib|MASKIRAN
+DEMO|podrska_hash|ODBIJENO
+DEMO|upozorenja|0

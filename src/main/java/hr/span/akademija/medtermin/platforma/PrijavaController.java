@@ -59,10 +59,6 @@ public class PrijavaController {
             return Html.odgovor(obrazacPrijave(returnUrl, "Neispravno korisničko ime ili lozinka."));
         }
         String token = tokeni.izdaj(korisnik.get().prijavljeni());
-        // M10: Secure sprečava slanje kolačića preko običnog HTTP-a; HttpOnly i
-        // SameSite=Lax ostaju uključeni. app.cookie-secure zadano je true, a za
-        // lokalni HTTP razvoj APP_COOKIE_SECURE=false. Produkcija treba HTTPS i true;
-        // postavku treba uskladiti s načinom na koji se TLS završava u infrastrukturi.
         ResponseCookie kolacic = ResponseCookie.from(AuthFilter.KOLACIC, token)
                 .secure(secureCookie)
                 .httpOnly(true)
@@ -129,10 +125,6 @@ public class PrijavaController {
         if (returnUrl == null || returnUrl.isBlank()) {
             return "/";
         }
-        // M08: Ranije je returnUrl bez provjere postao Location zaglavlje, što je
-        // omogućavalo preusmjeravanje na vanjsku stranicu. Prihvaćamo samo putanju
-        // koja počinje jednim '/', bez obrnute kose crte, kontrolnih i '%' znakova.
-        // Sumnjive vrijednosti vraćaju korisnika na '/'; lokalni put poput /moji radi.
         if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")
                 || returnUrl.indexOf('\\') >= 0 || returnUrl.chars().anyMatch(Character::isISOControl)
                 || returnUrl.indexOf('%') >= 0) {

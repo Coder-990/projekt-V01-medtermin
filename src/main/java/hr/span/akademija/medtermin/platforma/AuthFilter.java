@@ -45,9 +45,6 @@ public class AuthFilter extends OncePerRequestFilter {
             token = izKolacica(request);
         }
         PrijavljeniKorisnik korisnik = tokeni.korisnik(token);
-        // CSRF: preglednik automatski šalje SESSION kolačić. Za promjene podataka
-        // zahtijevamo točan same-origin ili konfigurirani frontend Origin; Bearer
-        // zahtjevi ne koriste automatske kolačiće i zadržavaju postojeći API ugovor.
         if (kolacic && korisnik != null && !sigurnaMetoda(request.getMethod())
                 && !pouzdanOrigin(request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);

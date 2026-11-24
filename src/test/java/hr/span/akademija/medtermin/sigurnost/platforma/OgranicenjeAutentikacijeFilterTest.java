@@ -25,27 +25,32 @@ class OgranicenjeAutentikacijeFilterTest {
     }
 
     @Test
-    void granicaIstjeceINeispravnaKonfiguracijaOdbija() throws Exception {
+    void ogranicenjeJePoKorisnikuIIpTeIstjece() {
         Sat sat = new Sat();
         var filter = new OgranicenjeAutentikacijeFilter(sat);
         ReflectionTestUtils.setField(filter, "prijave", 1);
-
-        // Prvi neuspjeli pokušaj (401) prolazi lanac i bilježi neuspjeh
-        assertThat(salji(filter, "/api/auth/login", "a", 401)).isEqualTo(401);
-
-        // Drugi pokušaj je blokiran jer je limit 1
-        assertThat(salji(filter, "/api/auth/login", "a", 200)).isEqualTo(429);
-
-        // Reset nije blokiran jer je drugi tip
-        assertThat(salji(filter, "/api/auth/reset-zahtjev", "a", 200)).isEqualTo(200);
-
-        // Nakon isteka prozora, ponovno je dopušteno
+        filter.neuspjelaPrijava("ip-a", "ana");
+        assertThat(filter.prijavaBlokirana("ip-a", "ana")).isTrue();
+        assertThat(filter.prijavaBlokirana("ip-a", "marko")).isFalse();
+        assertThat(filter.prijavaBlokirana("ip-b", "ana")).isFalse();
         sat.vrijeme = sat.vrijeme.plus(Duration.ofMinutes(15));
-        assertThat(salji(filter, "/api/auth/login", "a", 401)).isEqualTo(401);
-
-        // Ako je limit 0, odmah blokira
+        assertThat(filter.prijavaBlokirana("ip-a", "ana")).isFalse();
+        filter.neuspjelaPrijava("ip-a", "ana");
+        filter.uspjesnaPrijava("ip-a", "ana");
+        assertThat(filter.prijavaBlokirana("ip-a", "ana")).isFalse();
         ReflectionTestUtils.setField(filter, "prijave", 0);
-        assertThat(salji(filter, "/api/auth/login", "b", 200)).isEqualTo(429);
+        assertThat(filter.prijavaBlokirana("ip-b", "marko")).isTrue();
+    }
+
+    @Test
+    void uspjesanResetPonistavaPrethodneNeuspjehe() throws Exception {
+        var filter = new OgranicenjeAutentikacijeFilter(Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(filter, "reseti", 2);
+        assertThat(salji(filter, "/api/auth/reset", "a", 400)).isEqualTo(400);
+        assertThat(salji(filter, "/api/auth/reset", "a", 200)).isEqualTo(200);
+        assertThat(salji(filter, "/api/auth/reset", "a", 400)).isEqualTo(400);
+        assertThat(salji(filter, "/api/auth/reset", "a", 400)).isEqualTo(400);
+        assertThat(salji(filter, "/api/auth/reset", "a", 400)).isEqualTo(429);
     }
 
     @Test
@@ -55,7 +60,6 @@ class OgranicenjeAutentikacijeFilterTest {
             filter.zabiljeziNeuspjeh("prijava", "ip-" + i);
         }
         ReflectionTestUtils.setField(filter, "prijave", 1);
-        // Kad je tablica puna, novi klijent ne može zabilježiti novi prozor
         assertThat(salji(filter, "/api/auth/login", "novi", 401)).isEqualTo(401);
     }
 }

@@ -16,9 +16,9 @@ Zdravstveni podaci posebna su kategorija osobnih podataka (GDPR čl. 9). Uz zako
 | Lozinke | BCrypt za nove lozinke i migracija starih: `LozinkaHasher` i `AutentikacijaSigurnostTest`. |
 | Revizija | Neuspjele prijave na WARN bez lozinke u `KorisnikService`; centralizirana revizija, zaštita i rokovi čuvanja zapisa nisu dokazani. |
 | TLS | Lokalni razvoj koristi HTTP; TLS terminacija i HSTS produkcijski su preduvjeti, nisu dokazani implementacijom prototipa. |
-| RLS i DDM | Moguće kontrole SQL Server laboratorija; aplikacijski H2 ih ne dokazuje. RLS ograničava retke, DDM maskira prikaz i sam nije zamjena za autorizaciju. Za produkciju provjeriti politike, identitete i ovlasti. |
-| TDE | Moguća zaštita podataka SQL Servera u mirovanju; ne štiti podatke od ovlaštenog upita. Konfiguracija, ključevi i sigurnosne kopije zahtijevaju zaseban dokaz. |
-| Kontinuirana provjera | `ci/` predviđa testove, SAST, SCA, tajne i DAST; stvarnu uspješnost treba potvrditi izvještajima izvođenja. |
+| RLS i DDM | Kontrole su postavljene u SQL Server laboratoriju; `baza/06_K6_maskiranje_rls.sql` i `baza/provjeraK9.txt` (Z4.1–Z4.5) daju dokaz za laboratorij. Aplikacijski H2 ih ne provodi. RLS ograničava retke, DDM maskira prikaz i sam nije zamjena za autorizaciju. Za produkciju provjeriti politike, identitete i ovlasti. |
+| TDE | TDE je provjeren u SQL Server laboratoriju: `baza/07_K7_tde.sql` i `baza/provjeraK9.txt` (Z5.1–Z5.2). Ne štiti podatke od ovlaštenog upita; produkcijsko upravljanje ključevima zahtijeva zaseban dokaz. |
+| Kontinuirana provjera | `../ci` predviđa testove, SAST, SCA, tajne i DAST; stvarnu uspješnost treba potvrditi izvještajima izvođenja. |
 
 ## Incidenti
 

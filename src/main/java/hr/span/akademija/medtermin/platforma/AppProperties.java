@@ -8,7 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AppProperties(String naziv, String storageDir, String mailboxDir, Cors cors) {
 
     public record Cors(List<String> allowedOrigins) {
-        // M07: Obrambena kopija sprečava naknadnu izmjenu konfigurirane CORS liste.
         public Cors { allowedOrigins = allowedOrigins == null ? null : List.copyOf(allowedOrigins); }
     }
 
