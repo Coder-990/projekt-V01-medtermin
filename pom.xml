@@ -84,7 +84,7 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.10.5.0</version>
                 <configuration>
-                    <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${project.basedir}/obrana/scripts/spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
                 <dependencies>
                     <dependency>

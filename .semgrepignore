@@ -7,3 +7,6 @@ obj/
 izvjestaji/
 .ci-alati/
 http/
+
+# Generirani JaCoCo HTML izvještaj, ne izvorni kod.
+obrana/pokrivenost-postojecih/
