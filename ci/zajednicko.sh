@@ -56,6 +56,30 @@ else
   exit 2
 fi
 
+# Maven Central može privremeno vratiti 429; ponavljamo samo takvu grešku.
+# Ostale greške, uključujući pad testova, odmah ostaju neuspješne.
+maven_pokusaj() {
+  local zapis rc pokusaj
+  local -a ponovni=()
+  zapis=$(mktemp)
+  for pokusaj in 1 2 3; do
+    if "${MVN[@]}" "${ponovni[@]}" "$@" 2>&1 | tee "$zapis"; then
+      rm -f "$zapis"
+      return 0
+    else
+      rc=${PIPESTATUS[0]}
+      if [ "$rc" -eq 0 ]; then rm -f "$zapis"; return 1; fi
+    fi
+    if [ "$pokusaj" -eq 3 ] || ! grep -Eq 'HTTP Status: 429|status code: 429|status code 429' "$zapis"; then
+      rm -f "$zapis"
+      return "$rc"
+    fi
+    echo "Maven Central vraća 429; ponovni pokušaj nakon $((pokusaj * 20)) sekundi."
+    ponovni=(-U)
+    sleep "$((pokusaj * 20))"
+  done
+}
+
 # Python: virtualno okruženje aplikacije (stvara se ako ne postoji) s ovisnostima iz zadane datoteke.
 python_okruzenje() { # datoteka-ovisnosti
   [ -x "$VENV/bin/python" ] || python3 -m venv "$VENV"

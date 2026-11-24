@@ -30,7 +30,7 @@ echo "Semgrep $SEMGREP_VERZIJA, pravila: $SEMGREP_PRAVILA"
 # ---------- Java: SpotBugs + Find Security Bugs ----------
 if [ "$STACK" = java ]; then
   # failOnError=false: nalaze ocjenjuje gate; ovdje samo XML + SARIF izvještaj.
-  "${MVN[@]}" -Psast -DskipTests compile spotbugs:spotbugs \
+  maven_pokusaj -Psast -DskipTests compile spotbugs:spotbugs \
     -Dspotbugs.sarifOutput=true -Dspotbugs.failOnError=false
   cp target/spotbugsXml.xml "$IZVJESTAJI/spotbugs.xml"
   [ -f target/spotbugsSarif.json ] && cp target/spotbugsSarif.json "$IZVJESTAJI/spotbugs.sarif"

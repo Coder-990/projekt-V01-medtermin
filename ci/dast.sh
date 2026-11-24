@@ -27,7 +27,7 @@ if [ "$STACK" = java ]; then
   }
   jar=$(izvrsni_jar)
   if [ -z "$jar" ]; then
-    "${MVN[@]}" -DskipTests package
+    maven_pokusaj -DskipTests package
     jar=$(izvrsni_jar)
   fi
   [ -n "$jar" ] || { echo "::error::Nije pronađen izvršni JAR u target/"; exit 1; }

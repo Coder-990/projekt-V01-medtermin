@@ -26,7 +26,7 @@ fi
 if [ "$STACK" = java ]; then
   # verify = compile + test (+ JaCoCo report u fazi test) + package
   rc=0
-  "${MVN[@]}" verify || rc=$?
+  maven_pokusaj verify || rc=$?
   cp -r target/site/jacoco/. "$IZVJESTAJI/pokrivenost/" 2>/dev/null || true
   cp target/surefire-reports/*.xml "$IZVJESTAJI/testovi/" 2>/dev/null || true
   python3 - "$IZVJESTAJI/pokrivenost/jacoco.csv" <<'PY' | while read -r l; do sazetak "$l"; done
