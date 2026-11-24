@@ -1,11 +1,12 @@
 # Prihvaćeni nalazi (iznimke za sigurnosna vrata) – čita ih ci/gate.py.
 #
-# Format (5 polja odvojenih s |, obrazloženje je OBAVEZNO):
+# Format (5 obaveznih polja odvojenih s | i neobavezni šesti SHA-256):
 #   alat | pravilo | datoteka | odsječak koda | obrazloženje
 #
 #   alat      semgrep, spotbugs, roslyn, osv, nuget, gitleaks, zap (ili *)
 #   pravilo   ID pravila; uzorak kao u ljusci (*). Za Semgrep dovoljan je zadnji dio ID-a.
 #   datoteka  uzorak putanje (bez / = samo ime datoteke); za osv/nuget "paket@verzija", za zap putanja URL-a
+#   SHA-256  (neobavezno) iznimka vrijedi samo za datoteku s tim sažetkom
 #   odsječak  (neobavezno) tekst koji mora biti u redcima nalaza – iznimka tada vrijedi samo za TAJ kod,
 #             pa se ponovno uveden propust na drugom mjestu (ili drukčijim kodom) i dalje blokira.
 #             Ne smije sadržavati znak |.
@@ -15,4 +16,11 @@
 # semgrep | tainted-sql-string | LijecnikController.java | stupac + " " + redoslijed | stupac i smjer dolaze iz mape dopuštenih vrijednosti
 
 # --- Zajednička platforma T2 projekata (vrijedi za sve domene) ---
-spotbugs | SQL_INJECTION_JDBC | JdbcPomoc.java | | umetni() prima SQL od pozivatelja (prepareStatement + parametri); stvarni SQL na mjestima poziva provjeravaju Semgrep i SpotBugs
+spotbugs | SQL_INJECTION_JDBC | JdbcPomoc.java | | umetni() prima SQL od pozivatelja (prepareStatement + parametri); stvarni SQL na mjestima poziva provjeravaju Semgrep i SpotBugs | 3ff2fd91f871cb5dc34274bd81541db899e01c4d6e1ae7a81ba8c89644c0b373
+
+# Iznimke vrijede samo za pregledanu verziju datoteke (SHA-256); nakon promjene obvezan je novi pregled.
+spotbugs | SQL_INJECTION_SPRING_JDBC | src/main/java/hr/span/akademija/medtermin/lijecnici/LijecnikController.java | return jdbc.query(sql, MAPPER); | Stupac i smjer mapirani su na fiksne SQL vrijednosti; ostalo se odbija. | 220ac7bc144fdfb29c81f5f7a5b308651a1cb5b2ee4edd1e0f6aca1323a5e98c
+spotbugs | HRS_REQUEST_PARAMETER_TO_HTTP_HEADER | src/main/java/hr/span/akademija/medtermin/platforma/CorsFilter.java | response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin); | Origin se točno uspoređuje s konfiguriranim popisom i odbija kontrolne znakove. | 6c263712d2842bbd93204da4e5ff03138420ceecabdaa82b730bdcf05d38f011
+spotbugs | PERMISSIVE_CORS | src/main/java/hr/span/akademija/medtermin/platforma/CorsFilter.java | response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin); | Dopušteni su samo točno konfigurirani origini; ne postoji wildcard. | 6c263712d2842bbd93204da4e5ff03138420ceecabdaa82b730bdcf05d38f011
+spotbugs | PATH_TRAVERSAL_IN | src/main/java/hr/span/akademija/medtermin/platforma/PostaService.java | Path datoteka = Files.createTempFile(mapa, korisnik.username() + "-", ".txt", | Ime je ograničeno na sigurne znakove; mapa je konfigurirana i provjeravaju se dozvole. | d34b7f3d5e7bdf459db6c08395aa5f86163530be9bccbb670f313fed7ddf0413
+spotbugs | XXE_DOCUMENT | src/main/java/hr/span/akademija/medtermin/termini/UvozTermina.java | dokument = builder.parse(new ByteArrayInputStream(xml)); | Tvornica zabranjuje DOCTYPE i vanjske entitete te se greška konfiguracije odbija. | 2ea687e9b343fac11084bfe1fee32dec0b63ee450e7a3cde682e6f75d0af29cf

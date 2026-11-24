@@ -5,7 +5,7 @@
 # Prijava vraća JSON s poljem token. Njegovu vrijednost kopiraj u @token ispod,
 # bez navodnika; zatim pošalji zaštićene zahtjeve s Authorization: Bearer.
 @host = http://localhost:8080
-@token = GHmach9__aAv87gu5MbEVpA-zBZLfVksefYFn_EXy-4
+@token =
 
 ### Provjera rada
 GET {{host}}/api/health

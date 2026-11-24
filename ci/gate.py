@@ -13,6 +13,7 @@ pao, vrata NE prolaze – alat koji nije radio nije isto što i alat koji ništa
 Lokalno: python3 ci/gate.py   (GATE_PRESKOCI="dast" preskače kategoriju, npr. bez Dockera)
 """
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -287,12 +288,14 @@ def ucitaj_prihvacene():
     for i, redak in enumerate(open(PRIHVACENO, encoding="utf-8"), 1):
         if not redak.strip() or redak.lstrip().startswith("#"):
             continue
-        dijelovi = [d.strip() for d in redak.rstrip("\n").split("|", 4)]
-        if len(dijelovi) != 5 or not dijelovi[4] or not dijelovi[0] or not dijelovi[1]:
-            print(f"::warning file=ci/prihvaceno.txt,line={i}::Neispravan redak (treba 5 polja i obrazloženje) – zanemaren")
+        dijelovi = [d.strip() for d in redak.rstrip("\n").split("|")]
+        if len(dijelovi) == 5:
+            dijelovi.append("")
+        if len(dijelovi) != 6 or not dijelovi[4] or not dijelovi[0] or not dijelovi[1] or (dijelovi[5] and not re.fullmatch(r"[0-9a-f]{64}", dijelovi[5])):
+            print(f"::warning file=ci/prihvaceno.txt,line={i}::Neispravan redak (treba 5 polja i po želji SHA-256 datoteke) – zanemaren")
             continue
         pravila.append({"redak": i, "alat": dijelovi[0], "pravilo": dijelovi[1], "datoteka": dijelovi[2],
-                        "odsjecak": dijelovi[3], "obrazlozenje": dijelovi[4], "iskoristeno": 0})
+                        "odsjecak": dijelovi[3], "obrazlozenje": dijelovi[4], "sha256": dijelovi[5], "iskoristeno": 0})
     return pravila
 
 
@@ -325,6 +328,13 @@ def odgovara(p, n):
         else:
             ok = fnmatch.fnmatchcase(n["datoteka"].rsplit("/", 1)[-1], p["datoteka"])
         if not ok:
+            return False
+    if p["sha256"]:
+        try:
+            with open(os.path.join(KORIJEN, n["datoteka"]), "rb") as f:
+                if hashlib.sha256(f.read()).hexdigest() != p["sha256"]:
+                    return False
+        except OSError:
             return False
     if p["odsjecak"]:
         kod = kod_nalaza(n)
